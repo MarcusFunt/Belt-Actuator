@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Belt Actuator Solver</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>Belt Actuator Solver</h1>
+          <p>Symmetric four-wheel NEMA17 belt layout</p>
+        </div>
+        <output id="status" class="status" aria-live="polite">Ready</output>
+      </header>
+
+      <section class="workspace" aria-label="Belt actuator layout solver">
+        <aside class="control-pane" aria-label="Input parameters">
+          <div class="toolbar" aria-label="Actions">
+            <button id="solveButton" type="button" title="Solve neutral idler Y">Solve Y</button>
+            <button id="exportButton" type="button" title="Export Fusion 360 Parameter I/O CSV">Export CSV</button>
+            <button id="resetButton" type="button" title="Reset to the default GT2 example">Reset</button>
+          </div>
+
+          <section class="panel">
+            <h2>Belt and Drive</h2>
+            <label class="field compact" for="beltType">
+              <span>Belt profile</span>
+              <select id="beltType" name="beltType">
+                <option value="GT2">GT2</option>
+                <option value="GT3">GT3</option>
+                <option value="HTD-3M">HTD-3M</option>
+                <option value="HTD-5M">HTD-5M</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </label>
+            <div id="driveControls" class="control-list"></div>
+          </section>
+
+          <section class="panel">
+            <h2>Layout and Tension</h2>
+            <div id="layoutControls" class="control-list"></div>
+          </section>
+
+          <section class="panel diagnostics-panel">
+            <h2>Diagnostics</h2>
+            <pre id="diagnostics" class="diagnostics" aria-live="polite"></pre>
+          </section>
+        </aside>
+
+        <section class="plot-pane" aria-label="Belt layout preview">
+          <svg id="layoutSvg" role="img" aria-labelledby="plotTitle plotDescription">
+            <title id="plotTitle">Belt actuator layout</title>
+            <desc id="plotDescription">Pitch-line belt path, pulleys, idlers, centers, and dimension lines.</desc>
+          </svg>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

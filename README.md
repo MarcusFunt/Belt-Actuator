@@ -2,6 +2,12 @@
 
 A desktop layout tool for symmetric belt-driven NEMA17 actuators.
 
+## Web app
+
+The GitHub Pages version runs in the browser:
+
+https://marcusfunt.github.io/Belt-Actuator/
+
 ## Features
 
 - Symmetric four-wheel layout: input pulley, output pulley, two smooth backside idlers
@@ -26,6 +32,14 @@ pip install -r requirements.txt
 
 ```bash
 python belted_actuator_gui.py
+```
+
+## Run the web version locally
+
+Open `web/index.html` in a browser, or serve the folder:
+
+```bash
+python -m http.server 8000 -d web
 ```
 
 ## Usage
