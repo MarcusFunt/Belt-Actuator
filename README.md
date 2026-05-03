@@ -58,8 +58,8 @@ pushes to `main` and on pull requests.
 ## Usage
 
 1. Select a belt profile from the dropdown (pitch is set automatically, or choose *Custom*).
-2. Set belt length, pulley tooth counts, idler OD, and layout dimensions using the sliders or entry fields.
-3. Click **Solve idler Y** (or adjust any solver input — it solves automatically).
+2. Set belt length, pulley tooth counts, idler OD, belt back-to-pitch offset, and layout dimensions using the sliders or entry fields.
+3. Adjust any solver input to solve automatically, or click **Re-run** to run the solver again with the current values.
 4. Use **Tension offset** to simulate the idler pod moving along its slot.
 5. Click **Export CSV** to save Fusion 360 parameters.
 6. Click **Reset** to return to the default example.
@@ -67,9 +67,8 @@ pushes to `main` and on pull requests.
 ## Notes
 
 - All dimensions are in millimetres.
-- Pulleys are modelled at pitch radius; idlers at OD/2 + `BELT_BACK_TO_PITCH`.
-- `BELT_BACK_TO_PITCH` is a module-level constant (default `0.0`). Adjust it if
-  your belt's pitch line is offset from the back surface.
+- Pulleys are modelled at pitch radius; idlers at OD/2 plus the belt back-to-pitch UI parameter.
+- Belt back-to-pitch defaults to `0.0` mm. Increase it if your belt's pitch line is offset from the back surface.
 - The belt visual thickness in the 2D drawing does not affect the pitch-line solver.
 - Multiple valid idler Y positions may exist for a given belt length; the solver
   picks the one that maximises pulley wrap angle while keeping the layout compact.

@@ -458,7 +458,7 @@ class BeltModel:
             f = residual(y)
             return f if math.isfinite(f) else None
 
-        def refine(a: float, b: float, f_a: float, _f_b: float) -> Optional[float]:
+        def refine(a: float, b: float, f_a: float) -> Optional[float]:
             lo, hi, flo = a, b, f_a
             for _ in range(80):
                 mid = (lo + hi) / 2
@@ -496,7 +496,7 @@ class BeltModel:
             if abs(f) < 1e-9:
                 roots.append(y)
             elif prev_y is not None and prev_f is not None and prev_f * f <= 0:
-                root = refine(prev_y, y, prev_f, f)
+                root = refine(prev_y, y, prev_f)
                 if root is not None:
                     roots.append(root)
             prev_y, prev_f = y, f

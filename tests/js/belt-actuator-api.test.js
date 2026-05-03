@@ -109,6 +109,8 @@ test("derived metrics flag non-integer belts, clearance, and tension offset drif
 
   assert.ok(Math.abs(derived.beltTeethError) > 1e-6);
   assert.ok(derived.clearanceWarnings.length > 0);
+  assert.ok(Array.isArray(derived.clearanceWarnings[0].names));
+  assert.equal(typeof derived.clearanceWarnings[0].text, "string");
   assert.ok(Math.abs(derived.beltResidual) > 0.05);
 });
 
@@ -121,9 +123,19 @@ test("Fusion CSV rows stay stable and escape CSV-sensitive values", () => {
     ["needs_escape", "No Units", "1", "comma, quote \" and newline\nhere"]
   ]);
 
-  assert.equal(rows.length, 43);
+  assert.equal(rows.length, 44);
   assert.equal(rows[0][0], "belt_profile_code");
+  assert.ok(rows.some((row) => row[0] === "belt_back_to_pitch_mm"));
+  assert.match(rows.find((row) => row[0] === "output_shaft_dia_mm")[3], /PLACEHOLDER - verify for your build/);
+  assert.match(rows.find((row) => row[0] === "motor_mount_hole_spacing_mm")[3], /PLACEHOLDER - verify for your build/);
   assert.ok(csv.startsWith("Name,Unit,Expression,Comment\r\n"));
   assert.ok(csv.includes("belt_pitch_mm,mm"));
   assert.ok(csv.includes("\"comma, quote \"\" and newline\nhere\""));
+});
+
+test("Fusion CSV export rejects an unsolved nominal idler Y", () => {
+  assert.throws(
+    () => api.fusionRows(defaultParams, "GT2", null),
+    /Cannot export Fusion CSV before the solver finds a neutral idler Y/
+  );
 });

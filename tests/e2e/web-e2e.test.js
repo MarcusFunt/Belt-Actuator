@@ -152,9 +152,12 @@ test("controls handle custom profile, invalid geometry, reset, warning, and CSV 
     await page.fill("#belt_length_mm-number", "100");
     await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Selected belt is too short"));
     await expectText(page, "#diagnostics", /Invalid selected belt:/);
+    await expectText(page, "#diagnostics", /Fusion CSV export is disabled/);
+    assert.equal(await page.locator("#exportButton").isDisabled(), true);
 
     await page.click("#resetButton");
     await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Solved neutral idler Y = 29.263 mm"));
+    assert.equal(await page.locator("#exportButton").isEnabled(), true);
 
     await page.fill("#tension_offset_mm-number", "10");
     await page.waitForFunction(() => document.querySelector("#diagnostics")?.textContent.includes("Tension offset is outside half"));
@@ -172,7 +175,9 @@ test("controls handle custom profile, invalid geometry, reset, warning, and CSV 
     }
     assert.ok(csv.startsWith("Name,Unit,Expression,Comment"));
     assert.ok(csv.includes("belt_pitch_mm,mm"));
-    assert.equal(csv.trim().split(/\r?\n/).length, 44);
+    assert.ok(csv.includes("belt_back_to_pitch_mm,mm"));
+    assert.ok(csv.includes("PLACEHOLDER - verify for your build"));
+    assert.equal(csv.trim().split(/\r?\n/).length, 45);
     assert.deepEqual(diagnostics, []);
   } finally {
     await context.close();

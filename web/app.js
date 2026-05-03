@@ -9,6 +9,11 @@
   };
   const CUSTOM_BELT_TYPE = "Custom";
   const BELT_BACK_TO_PITCH = 0.0;
+  const NUMBER_INPUT_DEBOUNCE_MS = 150;
+  const PLACEHOLDER_WARNING = "PLACEHOLDER - verify for your build.";
+  const PLOT_LABEL_FONT_SIZE = 4;
+  const DIMENSION_LABEL_FONT_SIZE = 3.45;
+  const ERROR_LABEL_FONT_SIZE = 4.6;
   const CONTACT_ORDER = ["pulleyI", "idler2", "pulleyO", "idler1"];
   const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -18,6 +23,7 @@
     pulleyI_teeth: 20,
     pulleyO_teeth: 60,
     idler_OD_mm: 22.0,
+    belt_back_to_pitch_mm: BELT_BACK_TO_PITCH,
     center_IO_mm: 90.0,
     idler_x_offset_mm: 20.0,
     tension_slot_travel_mm: 6.0,
@@ -33,6 +39,7 @@
       ["pulleyI_teeth", "Input pulley teeth", "teeth", 10, 80, 1],
       ["pulleyO_teeth", "Output pulley teeth", "teeth", 20, 240, 1],
       ["idler_OD_mm", "Idler OD", "mm", 6.0, 60.0, 0.5],
+      ["belt_back_to_pitch_mm", "Belt back-to-pitch", "mm", 0.0, 5.0, 0.05],
       ["belt_visual_thickness_mm", "Belt visual thickness", "mm", 0.2, 8.0, 0.1]
     ],
     layoutControls: [
@@ -50,6 +57,7 @@
     "pulleyI_teeth",
     "pulleyO_teeth",
     "idler_OD_mm",
+    "belt_back_to_pitch_mm",
     "center_IO_mm",
     "idler_x_offset_mm"
   ]);
@@ -206,7 +214,7 @@
     const pitch = params.beltPitch;
     const rI = params.pulleyITeeth * pitch / Math.PI / 2;
     const rO = params.pulleyOTeeth * pitch / Math.PI / 2;
-    const rId = params.idlerOD / 2 + (params.beltBackToPitch || BELT_BACK_TO_PITCH);
+    const rId = params.idlerOD / 2 + (params.beltBackToPitch ?? BELT_BACK_TO_PITCH);
     const x = params.idlerX;
     const y = params.idlerY;
     const motorY = params.motorY;
@@ -373,7 +381,7 @@
     const maxRadius = Math.max(
       params.pulleyITeeth * params.beltPitch / Math.PI / 2,
       params.pulleyOTeeth * params.beltPitch / Math.PI / 2,
-      params.idlerOD / 2 + (params.beltBackToPitch || BELT_BACK_TO_PITCH)
+      params.idlerOD / 2 + (params.beltBackToPitch ?? BELT_BACK_TO_PITCH)
     );
     const span = Math.max(target / 2, Math.abs(centerY), Math.abs(idlerX), maxRadius) + 50.0;
     const loLimit = yMin === undefined || yMin === null ? Math.min(0.0, centerY) - span : yMin;
@@ -598,7 +606,7 @@
       pulleyITeeth: inputParams.pulleyI_teeth,
       pulleyOTeeth: inputParams.pulleyO_teeth,
       idlerOD: inputParams.idler_OD_mm,
-      beltBackToPitch: BELT_BACK_TO_PITCH,
+      beltBackToPitch: inputParams.belt_back_to_pitch_mm ?? BELT_BACK_TO_PITCH,
       motorY: inputParams.center_IO_mm,
       idlerX: inputParams.idler_x_offset_mm,
       idlerY
@@ -614,7 +622,11 @@
         const b = items[j];
         const clearance = norm(sub(a.center, b.center)) - a.radius - b.radius;
         if (clearance < minimumClearance) {
-          warnings.push(`${a.name}-${b.name}: ${clearance.toFixed(3)} mm`);
+          warnings.push({
+            names: [a.name, b.name],
+            clearance,
+            text: `${a.name}-${b.name}: ${clearance.toFixed(3)} mm`
+          });
         }
       }
     }
@@ -623,6 +635,7 @@
 
   function derived(inputParams, modelP, sol, nominalY) {
     const pitch = inputParams.belt_pitch_mm;
+    const beltBackToPitch = inputParams.belt_back_to_pitch_mm ?? BELT_BACK_TO_PITCH;
     const beltTeethExact = pitch ? inputParams.belt_length_mm / pitch : Number.POSITIVE_INFINITY;
     const actualY = modelP.idlerY;
     return {
@@ -635,7 +648,8 @@
       pulleyIPitchR: inputParams.pulleyI_teeth * pitch / Math.PI / 2,
       pulleyOPitchR: inputParams.pulleyO_teeth * pitch / Math.PI / 2,
       idlerR: inputParams.idler_OD_mm / 2,
-      idlerEffR: inputParams.idler_OD_mm / 2,
+      beltBackToPitch,
+      idlerEffR: inputParams.idler_OD_mm / 2 + beltBackToPitch,
       ratio: inputParams.pulleyO_teeth / inputParams.pulleyI_teeth,
       centerIO: inputParams.center_IO_mm,
       centerIIdler: Math.hypot(inputParams.idler_x_offset_mm, inputParams.center_IO_mm - actualY),
@@ -655,8 +669,15 @@
     return Number.isFinite(value) ? value.toFixed(digits) : "inf";
   }
 
+  function placeholderComment(text) {
+    return `${PLACEHOLDER_WARNING} ${text}`;
+  }
+
   function fusionRows(inputParams, beltType, nominalY) {
-    const resolvedNominalY = nominalY === null || nominalY === undefined ? inputParams.center_IO_mm / 2 : nominalY;
+    if (nominalY === null || nominalY === undefined) {
+      throw new Error("Cannot export Fusion CSV before the solver finds a neutral idler Y.");
+    }
+    const resolvedNominalY = nominalY;
     const modelP = modelParams(inputParams, resolvedNominalY + inputParams.tension_offset_mm);
     const sol = beltSolution(modelP);
     const d = derived(inputParams, modelP, sol, resolvedNominalY);
@@ -683,6 +704,7 @@
       ["pulleyO_pitch_r_mm", "mm", "pulleyO_pitch_dia_mm/2", "Output pulley pitch radius."],
       ["idler_OD_mm", "mm", mm(inputParams.idler_OD_mm), "Smooth backside idler outside diameter."],
       ["idler_r_mm", "mm", "idler_OD_mm/2", "Smooth idler physical radius."],
+      ["belt_back_to_pitch_mm", "mm", mm(inputParams.belt_back_to_pitch_mm ?? BELT_BACK_TO_PITCH), "Offset from belt back surface to pitch line; affects backside idler pitch radius."],
       ["center_IO_mm", "mm", mm(inputParams.center_IO_mm), "Vertical center distance between output and input pulley."],
       ["idler_x_offset_mm", "mm", mm(inputParams.idler_x_offset_mm), "Horizontal half-spacing from centerline to either idler."],
       ["tension_slot_travel_mm", "mm", mm(inputParams.tension_slot_travel_mm), "Total travel range of the shared idler pod."],
@@ -702,17 +724,17 @@
       ["center_I_idler_mm", "mm", mm(d.centerIIdler), "Computed center distance from input pulley to either idler at current offset."],
       ["center_O_idler_mm", "mm", mm(d.centerOIdler), "Computed center distance from output pulley to either idler at current offset."],
       ["idler_span_mm", "mm", "2*idler_x_offset_mm", "Distance between the two idler centers."],
-      ["motor_mount_hole_spacing_mm", "mm", "31 mm", "NEMA17 mounting hole spacing."],
-      ["motor_screw_clearance_dia_mm", "mm", "3.4 mm", "M3 clearance hole."],
-      ["motor_pilot_clearance_dia_mm", "mm", "23 mm", "Typical NEMA17 pilot clearance; verify your motor."],
-      ["output_shaft_dia_mm", "mm", "8 mm", "Output shaft placeholder."],
-      ["output_bearing_OD_mm", "mm", "16 mm", "Output bearing OD placeholder, e.g. 688 bearing."],
-      ["output_bearing_width_mm", "mm", "5 mm", "Output bearing width placeholder."],
-      ["idler_bolt_dia_mm", "mm", "5 mm", "Idler bearing mounting bolt diameter placeholder."],
-      ["idler_bolt_clearance_dia_mm", "mm", "idler_bolt_dia_mm+0.4 mm", "Idler bolt clearance hole."],
-      ["slot_length_mm", "mm", "tension_slot_travel_mm+idler_bolt_dia_mm", "Idler tension slot length."],
-      ["slot_width_mm", "mm", "idler_bolt_clearance_dia_mm", "Idler tension slot width."],
-      ["wall_thickness_mm", "mm", "3 mm", "General structural wall thickness placeholder."]
+      ["motor_mount_hole_spacing_mm", "mm", "31 mm", placeholderComment("NEMA17 mounting hole spacing.")],
+      ["motor_screw_clearance_dia_mm", "mm", "3.4 mm", placeholderComment("M3 clearance hole.")],
+      ["motor_pilot_clearance_dia_mm", "mm", "23 mm", placeholderComment("Typical NEMA17 pilot clearance.")],
+      ["output_shaft_dia_mm", "mm", "8 mm", placeholderComment("Output shaft diameter.")],
+      ["output_bearing_OD_mm", "mm", "16 mm", placeholderComment("Output bearing OD, e.g. 688 bearing.")],
+      ["output_bearing_width_mm", "mm", "5 mm", placeholderComment("Output bearing width.")],
+      ["idler_bolt_dia_mm", "mm", "5 mm", placeholderComment("Idler bearing mounting bolt diameter.")],
+      ["idler_bolt_clearance_dia_mm", "mm", "idler_bolt_dia_mm+0.4 mm", placeholderComment("Idler bolt clearance hole.")],
+      ["slot_length_mm", "mm", "tension_slot_travel_mm+idler_bolt_dia_mm", placeholderComment("Idler tension slot length.")],
+      ["slot_width_mm", "mm", "idler_bolt_clearance_dia_mm", placeholderComment("Idler tension slot width.")],
+      ["wall_thickness_mm", "mm", "3 mm", placeholderComment("General structural wall thickness.")]
     ];
   }
 
@@ -738,7 +760,9 @@
       `Ratio: ${formatNumber(d.ratio, 3)}:1`,
       `Input pitch dia: ${formatNumber(d.pulleyIPitchDia, 3)} mm`,
       `Output pitch dia: ${formatNumber(d.pulleyOPitchDia, 3)} mm`,
-      `Idler OD: ${formatNumber(2 * d.idlerEffR, 3)} mm`,
+      `Idler OD: ${formatNumber(inputParams.idler_OD_mm, 3)} mm`,
+      `Belt back-to-pitch: ${formatNumber(d.beltBackToPitch, 3)} mm`,
+      `Idler pitch radius: ${formatNumber(d.idlerEffR, 3)} mm`,
       "",
       d.idlerYNominal !== null && d.idlerYNominal !== undefined
         ? `Neutral idler Y: ${formatNumber(d.idlerYNominal, 3)} mm`
@@ -765,8 +789,11 @@
     if (offsetWarning) {
       warnings.push("Tension offset is outside half of the configured slot travel.");
     }
+    if (state.solvedIdlerYNominal === null) {
+      warnings.push("Fusion CSV export is disabled until the solver finds a neutral idler Y.");
+    }
     if (d.clearanceWarnings.length) {
-      warnings.push(`Clearance below minimum: ${d.clearanceWarnings.join("; ")}`);
+      warnings.push(`Clearance below minimum: ${d.clearanceWarnings.map((warning) => warning.text).join("; ")}`);
     }
     if (warnings.length) {
       lines.push("Warnings:");
@@ -857,6 +884,54 @@
     );
   }
 
+  function makeBounds() {
+    return {
+      minX: Number.POSITIVE_INFINITY,
+      maxX: Number.NEGATIVE_INFINITY,
+      minY: Number.POSITIVE_INFINITY,
+      maxY: Number.NEGATIVE_INFINITY
+    };
+  }
+
+  function includePoint(bounds, point, pad) {
+    const extra = pad || 0;
+    bounds.minX = Math.min(bounds.minX, point[0] - extra);
+    bounds.maxX = Math.max(bounds.maxX, point[0] + extra);
+    bounds.minY = Math.min(bounds.minY, point[1] - extra);
+    bounds.maxY = Math.max(bounds.maxY, point[1] + extra);
+  }
+
+  function includeCircle(bounds, center, radius, pad) {
+    includePoint(bounds, center, radius + (pad || 0));
+  }
+
+  function includeText(bounds, text, x, y, fontSize, pad) {
+    const extra = pad || 0;
+    const halfWidth = Math.max(fontSize, text.length * fontSize * 0.3) + extra;
+    const halfHeight = fontSize * 0.65 + extra;
+    includePoint(bounds, [x - halfWidth, y - halfHeight]);
+    includePoint(bounds, [x + halfWidth, y + halfHeight]);
+  }
+
+  function includeDimension(bounds, dimension) {
+    const offset = dimension.offset;
+    const labelOffset = dimension.labelOffset || [0, 0];
+    const a = [dimension.p1[0] + offset[0], dimension.p1[1] + offset[1]];
+    const b = [dimension.p2[0] + offset[0], dimension.p2[1] + offset[1]];
+    includePoint(bounds, dimension.p1);
+    includePoint(bounds, dimension.p2);
+    includePoint(bounds, a, 1);
+    includePoint(bounds, b, 1);
+    includeText(
+      bounds,
+      dimension.text,
+      (a[0] + b[0]) / 2 + labelOffset[0],
+      (a[1] + b[1]) / 2 + labelOffset[1],
+      DIMENSION_LABEL_FONT_SIZE,
+      1.6
+    );
+  }
+
   function drawLayout(svg, inputParams, modelP, sol, d, state) {
     svg.replaceChildren();
 
@@ -878,9 +953,6 @@
     svg.appendChild(defs);
 
     const items = circles(modelP);
-    const margin = 22;
-    const xPad = modelP.idlerX + Math.max(d.pulleyOPitchR, d.idlerEffR) + 24;
-    const yPad = Math.max(modelP.motorY, modelP.idlerY, 0) + Math.max(d.pulleyIPitchR, d.idlerEffR) + 14;
     const slotYMin = state.solvedIdlerYNominal !== null
       ? state.solvedIdlerYNominal - inputParams.tension_slot_travel_mm / 2
       : modelP.idlerY;
@@ -888,10 +960,91 @@
       ? state.solvedIdlerYNominal + inputParams.tension_slot_travel_mm / 2
       : modelP.idlerY;
 
-    const minX = Math.min(-modelP.idlerX - d.idlerEffR, -d.pulleyOPitchR, -d.pulleyIPitchR) - margin;
-    const maxX = Math.max(modelP.idlerX + d.idlerEffR, d.pulleyOPitchR, d.pulleyIPitchR, xPad + 5) + margin;
-    const minY = Math.min(-d.pulleyOPitchR, modelP.idlerY - d.idlerEffR, slotYMin) - margin;
-    const maxY = Math.max(modelP.motorY + d.pulleyIPitchR, modelP.idlerY + d.idlerEffR, slotYMax, yPad) + margin;
+    const idlerSpanDimOffset = [0, 23];
+    const idlerSpanLabelOffset = [0, 3];
+    const outputIdlerDimOffset = [8, -8];
+    const outputIdlerLabelOffset = [7, -1];
+    const inputIdlerDimOffset = [8, 8];
+    const inputIdlerLabelOffset = [8, 0];
+    const centerIoDimOffset = [
+      modelP.idlerX +
+        Math.max(d.pulleyOPitchR, d.pulleyIPitchR, d.idlerEffR) +
+        Math.abs(idlerSpanDimOffset[1]) +
+        Math.abs(idlerSpanLabelOffset[1]),
+      0
+    ];
+    const dimensions = [
+      {
+        p1: [0, 0],
+        p2: [0, modelP.motorY],
+        text: `center_IO ${modelP.motorY.toFixed(1)}`,
+        offset: centerIoDimOffset
+      },
+      {
+        p1: [-modelP.idlerX, modelP.idlerY],
+        p2: [modelP.idlerX, modelP.idlerY],
+        text: `idler span ${(2 * modelP.idlerX).toFixed(1)}`,
+        offset: idlerSpanDimOffset,
+        labelOffset: idlerSpanLabelOffset
+      },
+      {
+        p1: [0, 0],
+        p2: [modelP.idlerX, modelP.idlerY],
+        text: `O-idler ${d.centerOIdler.toFixed(1)}`,
+        offset: outputIdlerDimOffset,
+        labelOffset: outputIdlerLabelOffset
+      },
+      {
+        p1: [0, modelP.motorY],
+        p2: [modelP.idlerX, modelP.idlerY],
+        text: `I-idler ${d.centerIIdler.toFixed(1)}`,
+        offset: inputIdlerDimOffset,
+        labelOffset: inputIdlerLabelOffset
+      }
+    ];
+
+    const bounds = makeBounds();
+    const beltStrokePad = sol.valid && state.layoutError === null
+      ? Math.max(0.6, inputParams.belt_visual_thickness_mm * 1.1)
+      : 0;
+
+    items.forEach((item) => {
+      includeCircle(bounds, item.center, item.radius, 2);
+      const label = {
+        pulleyI: "input",
+        pulleyO: "output",
+        idler1: "idler L",
+        idler2: "idler R"
+      }[item.name] || item.name;
+      const labelY = item.name === "pulleyO"
+        ? item.center[1] - item.radius - 5
+        : item.center[1] + item.radius + 3;
+      includeText(bounds, label, item.center[0], labelY, PLOT_LABEL_FONT_SIZE, 1.2);
+    });
+    includePoint(bounds, [0, 0]);
+    includePoint(bounds, [0, modelP.motorY]);
+    includePoint(bounds, [-modelP.idlerX, modelP.idlerY]);
+    includePoint(bounds, [modelP.idlerX, modelP.idlerY]);
+    includePoint(bounds, [-modelP.idlerX, slotYMin], 1.5);
+    includePoint(bounds, [-modelP.idlerX, slotYMax], 1.5);
+    includePoint(bounds, [modelP.idlerX, slotYMin], 1.5);
+    includePoint(bounds, [modelP.idlerX, slotYMax], 1.5);
+    if (sol.valid && state.layoutError === null) {
+      sol.tangentEdges.forEach((edge) => {
+        includePoint(bounds, edge[0], beltStrokePad);
+        includePoint(bounds, edge[1], beltStrokePad);
+      });
+      Object.keys(sol.arcPoints).forEach((key) => {
+        sol.arcPoints[key].forEach((point) => includePoint(bounds, point, beltStrokePad));
+      });
+    }
+    dimensions.forEach((dimension) => includeDimension(bounds, dimension));
+
+    const viewPadding = Math.max(6, inputParams.belt_visual_thickness_mm * 2);
+    const minX = bounds.minX - viewPadding;
+    const maxX = bounds.maxX + viewPadding;
+    const minY = bounds.minY - viewPadding;
+    const maxY = bounds.maxY + viewPadding;
 
     svg.setAttribute("viewBox", `${minX} ${-maxY} ${maxX - minX} ${maxY - minY}`);
     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
@@ -914,7 +1067,7 @@
         }));
       });
     } else {
-      appendText(svg, state.layoutError || sol.reason, (minX + maxX) / 2, maxY - 12, "error-label");
+      appendText(svg, state.layoutError || sol.reason, (minX + maxX) / 2, maxY - viewPadding - ERROR_LABEL_FONT_SIZE, "error-label");
     }
 
     if (state.solvedIdlerYNominal !== null && inputParams.tension_slot_travel_mm > 0) {
@@ -934,7 +1087,7 @@
 
     const warningNames = new Set();
     d.clearanceWarnings.forEach((warning) => {
-      warning.split(":")[0].split("-").forEach((name) => warningNames.add(name));
+      warning.names.forEach((name) => warningNames.add(name));
     });
 
     items.forEach((item) => {
@@ -958,34 +1111,9 @@
       appendText(svg, label, item.center[0], labelY, "plot-label");
     });
 
-    dimLine(svg, geometry, [0, 0], [0, modelP.motorY], `center_IO ${modelP.motorY.toFixed(1)}`, [xPad, 0]);
-    dimLine(
-      svg,
-      geometry,
-      [-modelP.idlerX, modelP.idlerY],
-      [modelP.idlerX, modelP.idlerY],
-      `idler span ${(2 * modelP.idlerX).toFixed(1)}`,
-      [0, 23],
-      [0, 3]
-    );
-    dimLine(
-      svg,
-      geometry,
-      [0, 0],
-      [modelP.idlerX, modelP.idlerY],
-      `O-idler ${d.centerOIdler.toFixed(1)}`,
-      [8, -8],
-      [7, -1]
-    );
-    dimLine(
-      svg,
-      geometry,
-      [0, modelP.motorY],
-      [modelP.idlerX, modelP.idlerY],
-      `I-idler ${d.centerIIdler.toFixed(1)}`,
-      [8, 8],
-      [8, 0]
-    );
+    dimensions.forEach((dimension) => {
+      dimLine(svg, geometry, dimension.p1, dimension.p2, dimension.text, dimension.offset, dimension.labelOffset);
+    });
   }
 
   function csvEscape(value) {
@@ -1015,6 +1143,8 @@
     const metricsBar = document.getElementById("metricsBar");
     const svg = document.getElementById("layoutSvg");
     const beltType = document.getElementById("beltType");
+    const solveButton = document.getElementById("solveButton");
+    const exportButton = document.getElementById("exportButton");
 
     function inputParams() {
       const out = {};
@@ -1089,7 +1219,13 @@
       const modelP = modelParams(p, actualY);
       const sol = beltSolution(modelP);
       const d = derived(p, modelP, sol, state.solvedIdlerYNominal);
+      const canExport = state.solvedIdlerYNominal !== null;
       status.textContent = state.lastSolveMessage;
+      status.classList.toggle("danger", !canExport);
+      exportButton.disabled = !canExport;
+      exportButton.title = canExport
+        ? "Export Fusion 360 Parameter I/O CSV"
+        : "CSV export disabled until the solver finds a neutral idler Y";
       diagnostics.textContent = diagnosticsText(p, state.beltType, state, modelP, sol, d);
       renderMetrics(p, state, sol, d);
       drawLayout(svg, p, modelP, sol, d, state);
@@ -1147,6 +1283,28 @@
       }
     }
 
+    function scheduleNumberControlChanged(name, source) {
+      const control = controls.get(name);
+      if (!control) {
+        return;
+      }
+      if (control.debounceTimer !== null) {
+        global.clearTimeout(control.debounceTimer);
+      }
+      control.debounceTimer = global.setTimeout(() => {
+        control.debounceTimer = null;
+        onControlChanged(name, source);
+      }, NUMBER_INPUT_DEBOUNCE_MS);
+    }
+
+    function cancelPendingControlChange(name) {
+      const control = controls.get(name);
+      if (control && control.debounceTimer !== null) {
+        global.clearTimeout(control.debounceTimer);
+        control.debounceTimer = null;
+      }
+    }
+
     function createControl(containerId, spec) {
       const [name, label, unit, min, max, step] = spec;
       const field = document.createElement("label");
@@ -1179,9 +1337,16 @@
       field.append(labelNode, number, unitNode, range);
       document.getElementById(containerId).appendChild(field);
 
-      controls.set(name, { range, number });
-      range.addEventListener("input", () => onControlChanged(name, range));
-      number.addEventListener("input", () => onControlChanged(name, number));
+      controls.set(name, { range, number, debounceTimer: null });
+      range.addEventListener("input", () => {
+        cancelPendingControlChange(name);
+        onControlChanged(name, range);
+      });
+      number.addEventListener("input", () => scheduleNumberControlChanged(name, number));
+      number.addEventListener("change", () => {
+        cancelPendingControlChange(name);
+        onControlChanged(name, number);
+      });
     }
 
     Object.keys(CONTROL_GROUPS).forEach((containerId) => {
@@ -1189,7 +1354,7 @@
     });
 
     beltType.addEventListener("change", () => applyBeltType(true));
-    document.getElementById("solveButton").addEventListener("click", solveAndRender);
+    solveButton.addEventListener("click", solveAndRender);
     document.getElementById("resetButton").addEventListener("click", () => {
       state.beltType = "GT2";
       beltType.value = "GT2";
@@ -1197,7 +1362,13 @@
       applyBeltType(false);
       solveAndRender();
     });
-    document.getElementById("exportButton").addEventListener("click", () => {
+    exportButton.addEventListener("click", () => {
+      if (state.solvedIdlerYNominal === null) {
+        status.textContent = "Cannot export CSV until the solver finds a neutral idler Y.";
+        status.classList.add("danger");
+        exportButton.disabled = true;
+        return;
+      }
       const p = inputParams();
       const rows = [["Name", "Unit", "Expression", "Comment"]].concat(
         fusionRows(p, state.beltType, state.solvedIdlerYNominal)
@@ -1219,6 +1390,7 @@
 
   const api = {
     BELT_PITCH_PRESETS,
+    BELT_BACK_TO_PITCH,
     DEFAULTS,
     modelParams,
     circles,
