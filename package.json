@@ -4,14 +4,23 @@
   "private": true,
   "description": "Tests and CI tooling for the Belt Actuator Solver web app.",
   "scripts": {
-    "test": "npm run test:js && npm run test:e2e",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "npm run build && npm run test:js && npm run test:e2e",
     "test:js": "node --test tests/js/*.test.js",
     "test:e2e": "node --test tests/e2e/*.test.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "devDependencies": {
-    "playwright": "1.59.1"
+    "@vitejs/plugin-react": "^6.0.1",
+    "playwright": "1.59.1",
+    "vite": "^8.0.10"
+  },
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   }
 }

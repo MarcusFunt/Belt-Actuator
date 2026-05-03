@@ -8,6 +8,10 @@ The GitHub Pages version runs in the browser:
 
 https://marcusfunt.github.io/Belt-Actuator/
 
+The React source lives in `src/`. The checked-in GitHub Pages build is emitted
+to `web/`, while the root `index.html` keeps redirecting visitors into that
+static app.
+
 ## Features
 
 - Symmetric four-wheel layout: input pulley, output pulley, two smooth backside idlers
@@ -20,7 +24,7 @@ https://marcusfunt.github.io/Belt-Actuator/
 ## Requirements
 
 - Python 3.9+
-- Node.js 20+ for JavaScript and browser tests
+- Node.js 20.19+ or 22.12+ for the React build and browser tests
 
 ## Install
 
@@ -30,7 +34,16 @@ npm install
 
 ## Run Locally
 
+Run the React development server:
+
 ```bash
+npm run dev
+```
+
+Or build the GitHub Pages output and serve it as static files:
+
+```bash
+npm run build
 python -m http.server 8000 -d web
 ```
 
@@ -52,8 +65,9 @@ npx playwright install chromium
 npm test
 ```
 
-CI runs the Python solver tests, JavaScript API tests, and Chromium E2E tests on
-pushes to `main` and on pull requests.
+`npm test` builds the React app into `web/`, then runs the JavaScript API tests
+and Chromium E2E tests. CI runs the Python solver tests, JavaScript API tests,
+and Chromium E2E tests on pushes to `main` and on pull requests.
 
 ## Usage
 

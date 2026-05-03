@@ -50,7 +50,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Check JavaScript syntax
-        run: node --check web/app.js
+        run: node --check public/app.js
 
-      - name: Run web tests
+      - name: Build and run web tests
         run: npm test
