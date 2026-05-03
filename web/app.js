@@ -913,7 +913,16 @@
       }));
       appendLine(geometry, [item.center[0] - 1.8, item.center[1]], [item.center[0] + 1.8, item.center[1]], "center-mark");
       appendLine(geometry, [item.center[0], item.center[1] - 1.8], [item.center[0], item.center[1] + 1.8], "center-mark");
-      appendText(svg, item.name, item.center[0], item.center[1] + item.radius + 3, "plot-label");
+      const label = {
+        pulleyI: "input",
+        pulleyO: "output",
+        idler1: "idler L",
+        idler2: "idler R"
+      }[item.name] || item.name;
+      const labelY = item.name === "pulleyO"
+        ? item.center[1] - item.radius - 5
+        : item.center[1] + item.radius + 3;
+      appendText(svg, label, item.center[0], labelY, "plot-label");
     });
 
     dimLine(svg, geometry, [0, 0], [0, modelP.motorY], `center_IO ${modelP.motorY.toFixed(1)}`, [xPad, 0]);
@@ -967,6 +976,7 @@
 
     const status = document.getElementById("status");
     const diagnostics = document.getElementById("diagnostics");
+    const metricsBar = document.getElementById("metricsBar");
     const svg = document.getElementById("layoutSvg");
     const beltType = document.getElementById("beltType");
 
@@ -988,6 +998,54 @@
       control.number.value = value;
     }
 
+    function appendMetric(label, value, tone) {
+      const item = document.createElement("span");
+      item.className = tone ? `metric ${tone}` : "metric";
+
+      const labelNode = document.createElement("span");
+      labelNode.className = "metric-label";
+      labelNode.textContent = label;
+
+      const valueNode = document.createElement("span");
+      valueNode.className = "metric-value";
+      valueNode.textContent = value;
+
+      item.append(labelNode, valueNode);
+      metricsBar.appendChild(item);
+    }
+
+    function renderMetrics(p, state, sol, d) {
+      if (!metricsBar) {
+        return;
+      }
+      metricsBar.replaceChildren();
+
+      const toothError = Number.isFinite(d.beltTeethError) ? Math.abs(d.beltTeethError) : Number.POSITIVE_INFINITY;
+      const teeth = toothError < 1e-6
+        ? `${Math.round(d.beltTeethRounded)}T`
+        : `${formatNumber(d.beltTeethExact, 1)}T`;
+      const travelHalf = p.tension_slot_travel_mm / 2;
+      const offsetTone = p.tension_slot_travel_mm >= 0 && Math.abs(p.tension_offset_mm) > travelHalf + 1e-9
+        ? "warning"
+        : "";
+      const residualTone = Math.abs(d.beltResidual) > 0.05 ? "warning" : "";
+      const clearanceTone = d.clearanceWarnings.length ? "danger" : "";
+
+      appendMetric("Ratio", `${formatNumber(d.ratio, 2)}:1`);
+      appendMetric("Belt", teeth, toothError < 1e-6 ? "" : "warning");
+      appendMetric(
+        "Neutral Y",
+        state.solvedIdlerYNominal === null ? "unsolved" : `${formatNumber(state.solvedIdlerYNominal, 2)} mm`,
+        state.solvedIdlerYNominal === null ? "danger" : ""
+      );
+      appendMetric("Offset", `${p.tension_offset_mm >= 0 ? "+" : ""}${formatNumber(p.tension_offset_mm, 1)} mm`, offsetTone);
+      appendMetric("Residual", `${d.beltResidual >= 0 ? "+" : ""}${formatNumber(d.beltResidual, 3)} mm`, residualTone);
+      appendMetric("Clearance", d.clearanceWarnings.length ? `${d.clearanceWarnings.length} warning` : "OK", clearanceTone);
+      if (!sol.valid || state.layoutError !== null) {
+        appendMetric("Layout", "invalid", "danger");
+      }
+    }
+
     function render() {
       const p = inputParams();
       const nominalY = state.solvedIdlerYNominal === null ? p.center_IO_mm / 2 : state.solvedIdlerYNominal;
@@ -997,6 +1055,7 @@
       const d = derived(p, modelP, sol, state.solvedIdlerYNominal);
       status.textContent = state.lastSolveMessage;
       diagnostics.textContent = diagnosticsText(p, state.beltType, state, modelP, sol, d);
+      renderMetrics(p, state, sol, d);
       drawLayout(svg, p, modelP, sol, d, state);
     }
 

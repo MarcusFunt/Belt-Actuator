@@ -1,8 +1,9 @@
 :root {
   color-scheme: light;
-  --page: #f5f6f4;
+  --page: #eef2ef;
   --panel: #ffffff;
-  --panel-strong: #fbfbf8;
+  --panel-strong: #fbfcfa;
+  --panel-muted: #f6f8f5;
   --ink: #222321;
   --muted: #676b63;
   --line: #d8ddd2;
@@ -24,12 +25,18 @@ body {
   min-height: 100%;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background: var(--page);
   color: var(--ink);
   font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.4;
+  height: 100%;
+  overflow: hidden;
 }
 
 button,
@@ -39,12 +46,17 @@ select {
 }
 
 button {
+  min-width: 0;
   min-height: 2.25rem;
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   background: var(--panel);
   color: var(--ink);
   cursor: pointer;
+  overflow: hidden;
+  padding: 0 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 button:hover {
@@ -60,9 +72,10 @@ select:focus-visible {
 }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
 
 .topbar {
@@ -70,9 +83,10 @@ select:focus-visible {
   align-items: end;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.9rem 1rem;
+  padding: 0.8rem 1rem;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
+  box-shadow: 0 1px 0 rgba(34, 35, 33, 0.03);
 }
 
 .topbar h1 {
@@ -98,39 +112,103 @@ select:focus-visible {
 .workspace {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(320px, 440px) 1fr;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: 0.75rem;
   padding: 0.75rem;
 }
 
 .control-pane {
   min-width: 0;
+  min-height: 0;
   overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  padding-right: 0.15rem;
+  scrollbar-width: thin;
 }
 
 .plot-pane {
   min-width: 0;
-  min-height: 42rem;
+  min-height: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel-strong);
   overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.metrics-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-height: 1.7rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-muted);
+  padding: 0.18rem 0.45rem;
+  white-space: nowrap;
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.metric-value {
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.metric.warning {
+  border-color: #d8a46f;
+  background: #fff7ed;
+}
+
+.metric.warning .metric-value {
+  color: var(--warning);
+}
+
+.metric.danger {
+  border-color: #e1aaa5;
+  background: #fff5f4;
+}
+
+.metric.danger .metric-value {
+  color: var(--danger);
 }
 
 #layoutSvg {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 42rem;
+  min-height: 0;
 }
 
 .toolbar {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding-bottom: 0.1rem;
+  background: var(--page);
 }
 
 .toolbar button:first-child {
@@ -149,11 +227,12 @@ select:focus-visible {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
-  padding: 0.75rem;
+  padding: 0.85rem;
+  box-shadow: 0 1px 2px rgba(34, 35, 33, 0.04);
 }
 
 .panel h2 {
-  margin: 0 0 0.65rem;
+  margin: 0 0 0.7rem;
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -166,9 +245,9 @@ select:focus-visible {
 
 .field {
   display: grid;
-  grid-template-columns: minmax(8.5rem, 1fr) minmax(7rem, 9rem) 3.2rem;
+  grid-template-columns: minmax(8.5rem, 1fr) minmax(6.75rem, 8.5rem) 3.1rem;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem 0.55rem;
   color: var(--muted);
   font-size: 0.88rem;
 }
@@ -182,6 +261,7 @@ select:focus-visible {
   grid-column: 1 / -1;
   width: 100%;
   accent-color: var(--accent);
+  margin: 0.1rem 0 0.05rem;
 }
 
 .field input[type="number"],
@@ -218,7 +298,7 @@ select:focus-visible {
   margin: 0;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #f8faf7;
+  background: var(--panel-muted);
   padding: 0.75rem;
   color: #2f332d;
   font-family: Consolas, "SFMono-Regular", "Liberation Mono", monospace;
@@ -228,13 +308,13 @@ select:focus-visible {
 }
 
 .plot-grid {
-  stroke: #d5dbd2;
-  stroke-width: 0.55;
+  stroke: #d9dfd6;
+  stroke-width: 0.45;
 }
 
 .axis-line {
-  stroke: #697266;
-  stroke-width: 1;
+  stroke: #657063;
+  stroke-width: 0.75;
   stroke-dasharray: 4 4;
 }
 
@@ -246,9 +326,9 @@ select:focus-visible {
 }
 
 .circle-line {
-  fill: none;
-  stroke: #384137;
-  stroke-width: 2;
+  fill: rgba(255, 255, 255, 0.58);
+  stroke: #303b33;
+  stroke-width: 1.3;
 }
 
 .circle-warning {
@@ -257,47 +337,47 @@ select:focus-visible {
 
 .slot-line {
   stroke: #176c9d;
-  stroke-width: 1.5;
+  stroke-width: 1.05;
 }
 
 .dimension-line {
   stroke: #5f685c;
-  stroke-width: 0.9;
+  stroke-width: 0.62;
   fill: none;
 }
 
 .extension-line {
   stroke: #838c7f;
-  stroke-width: 0.65;
+  stroke-width: 0.48;
   stroke-dasharray: 2.5 2.5;
 }
 
 .center-mark {
   stroke: #2f332d;
-  stroke-width: 1.3;
+  stroke-width: 0.95;
 }
 
 .plot-label {
   fill: #252924;
-  font-size: 7px;
+  font-size: 4px;
   paint-order: stroke;
   stroke: #ffffff;
-  stroke-width: 3px;
+  stroke-width: 2.4px;
   stroke-linejoin: round;
 }
 
 .dimension-label {
   fill: #343a31;
-  font-size: 7px;
+  font-size: 3.25px;
   paint-order: stroke;
   stroke: #ffffff;
-  stroke-width: 4px;
+  stroke-width: 2.8px;
   stroke-linejoin: round;
 }
 
 .error-label {
   fill: var(--danger);
-  font-size: 8px;
+  font-size: 4.6px;
   paint-order: stroke;
   stroke: #ffffff;
   stroke-width: 4px;
@@ -305,6 +385,18 @@ select:focus-visible {
 }
 
 @media (max-width: 980px) {
+  body {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app-shell {
+    min-height: 100vh;
+    height: auto;
+    overflow: visible;
+  }
+
   .topbar {
     align-items: start;
     flex-direction: column;
@@ -315,12 +407,40 @@ select:focus-visible {
   }
 
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
+  }
+
+  .control-pane {
+    display: contents;
+  }
+
+  .toolbar {
+    order: 1;
+    min-width: 0;
+    position: sticky;
+    top: 0;
+  }
+
+  .plot-pane {
+    order: 2;
+  }
+
+  .panel {
+    order: 3;
+  }
+
+  .diagnostics-panel {
+    order: 4;
   }
 
   .plot-pane,
   #layoutSvg {
     min-height: 32rem;
+  }
+
+  .metrics-bar {
+    align-content: start;
   }
 }
 
@@ -335,6 +455,27 @@ select:focus-visible {
   }
 
   .toolbar {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .toolbar button {
+    padding: 0 0.45rem;
+  }
+
+  .metrics-bar {
+    gap: 0.35rem;
+    padding: 0.4rem;
+  }
+
+  .metric {
+    padding: 0.15rem 0.35rem;
+  }
+
+  .metric-label {
+    font-size: 0.72rem;
+  }
+
+  .metric-value {
+    font-size: 0.78rem;
   }
 }
