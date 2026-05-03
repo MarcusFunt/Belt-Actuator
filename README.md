@@ -42,6 +42,25 @@ Open `web/index.html` in a browser, or serve the folder:
 python -m http.server 8000 -d web
 ```
 
+## Test
+
+Run the Python solver tests:
+
+```bash
+python -m unittest discover -s tests/python -v
+```
+
+Run the JavaScript API and browser end-to-end tests:
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+CI runs the Python solver tests, JavaScript API tests, and Chromium E2E tests on
+pushes to `main` and on pull requests.
+
 ## Usage
 
 1. Select a belt profile from the dropdown (pitch is set automatically, or choose *Custom*).

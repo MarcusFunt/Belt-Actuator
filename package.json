@@ -1,0 +1,17 @@
+{
+  "name": "belt-actuator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tests and CI tooling for the Belt Actuator Solver web app.",
+  "scripts": {
+    "test": "npm run test:js && npm run test:e2e",
+    "test:js": "node --test tests/js/*.test.js",
+    "test:e2e": "node --test tests/e2e/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "1.59.1"
+  }
+}
