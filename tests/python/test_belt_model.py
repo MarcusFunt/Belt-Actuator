@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from belted_actuator_gui import BeltModel, segment_intersection, tangent_options
+from belted_actuator_model import BeltModel, segment_intersection, tangent_options
 
 
 DEFAULT_MODEL = {

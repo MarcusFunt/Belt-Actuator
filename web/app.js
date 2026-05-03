@@ -642,7 +642,7 @@
 
     const beltTypeCodes = { GT2: 1, GT3: 2, "HTD-3M": 3, "HTD-5M": 4 };
     const beltTypeCode = beltTypeCodes[beltType] || 0;
-    const beltTypeComment = `GUI belt profile: ${beltType}. 0=Custom, 1=GT2, 2=GT3, 3=HTD-3M, 4=HTD-5M.`;
+    const beltTypeComment = `Belt profile: ${beltType}. 0=Custom, 1=GT2, 2=GT3, 3=HTD-3M, 4=HTD-5M.`;
 
     return [
       ["belt_profile_code", "No Units", String(beltTypeCode), beltTypeComment],

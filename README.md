@@ -1,6 +1,6 @@
 # Belt-Actuator
 
-A desktop layout tool for symmetric belt-driven NEMA17 actuators.
+A browser-based layout tool for symmetric belt-driven NEMA17 actuators.
 
 ## Web app
 
@@ -20,27 +20,21 @@ https://marcusfunt.github.io/Belt-Actuator/
 ## Requirements
 
 - Python 3.9+
-- matplotlib ≥ 3.5 (Tkinter is included with standard Python)
+- Node.js 20+ for JavaScript and browser tests
 
 ## Install
 
 ```bash
-pip install -r requirements.txt
+npm install
 ```
 
-## Run
-
-```bash
-python belted_actuator_gui.py
-```
-
-## Run the web version locally
-
-Open `web/index.html` in a browser, or serve the folder:
+## Run Locally
 
 ```bash
 python -m http.server 8000 -d web
 ```
+
+Then open `http://localhost:8000`.
 
 ## Test
 

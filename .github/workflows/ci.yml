@@ -24,8 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Compile Python entry point
-        run: python -m py_compile belted_actuator_gui.py
+      - name: Compile Python solver module
+        run: python -m py_compile belted_actuator_model.py
 
       - name: Run Python unit tests
         run: python -m unittest discover -s tests/python -v
