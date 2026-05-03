@@ -844,6 +844,37 @@
     svg.appendChild(node);
   }
 
+  function appendPillText(svg, text, x, y, className, fontSize, anchor) {
+    const textAnchor = anchor || "middle";
+    const width = Math.max(fontSize * 2.4, text.length * fontSize * 0.58 + fontSize * 1.1);
+    const height = fontSize * 1.85;
+    const left = textAnchor === "middle" ? x - width / 2 : x - fontSize * 0.55;
+    const top = -y - height / 2;
+    svg.appendChild(makeSvgElement("rect", {
+      x: left,
+      y: top,
+      width,
+      height,
+      rx: fontSize * 0.55,
+      ry: fontSize * 0.55,
+      class: `annotation-pill ${className}-pill`
+    }));
+    appendText(svg, text, x, y, className, textAnchor);
+  }
+
+  function summarizePlotError(message) {
+    if (/too short/i.test(message)) {
+      return "Belt too short";
+    }
+    if (/too long/i.test(message)) {
+      return "Belt too long";
+    }
+    if (/No valid/i.test(message)) {
+      return "No valid path";
+    }
+    return "Invalid layout";
+  }
+
   function pointsToPath(points) {
     if (!points.length) {
       return "";
@@ -875,12 +906,13 @@
     });
     appendLine(geometryGroup, p1, a, "extension-line");
     appendLine(geometryGroup, p2, b, "extension-line");
-    appendText(
+    appendPillText(
       svg,
       text,
       (a[0] + b[0]) / 2 + labelShift[0],
       (a[1] + b[1]) / 2 + labelShift[1],
-      "dimension-label"
+      "dimension-label",
+      DIMENSION_LABEL_FONT_SIZE
     );
   }
 
@@ -1057,6 +1089,16 @@
     if (sol.valid && state.layoutError === null) {
       const beltWidth = Math.max(1.2, inputParams.belt_visual_thickness_mm * 2.2);
       sol.tangentEdges.forEach((edge) => {
+        appendLine(geometry, edge[0], edge[1], "belt-shadow", { "stroke-width": beltWidth + 1.4 });
+      });
+      Object.keys(sol.arcPoints).forEach((key) => {
+        geometry.appendChild(makeSvgElement("path", {
+          d: pointsToPath(sol.arcPoints[key]),
+          class: "belt-shadow",
+          "stroke-width": beltWidth + 1.4
+        }));
+      });
+      sol.tangentEdges.forEach((edge) => {
         appendLine(geometry, edge[0], edge[1], "belt-line", { "stroke-width": beltWidth });
       });
       Object.keys(sol.arcPoints).forEach((key) => {
@@ -1067,7 +1109,14 @@
         }));
       });
     } else {
-      appendText(svg, state.layoutError || sol.reason, (minX + maxX) / 2, maxY - viewPadding - ERROR_LABEL_FONT_SIZE, "error-label");
+      appendPillText(
+        svg,
+        summarizePlotError(state.layoutError || sol.reason),
+        (minX + maxX) / 2,
+        maxY - viewPadding - ERROR_LABEL_FONT_SIZE,
+        "error-label",
+        ERROR_LABEL_FONT_SIZE
+      );
     }
 
     if (state.solvedIdlerYNominal !== null && inputParams.tension_slot_travel_mm > 0) {
@@ -1095,7 +1144,11 @@
         cx: item.center[0],
         cy: item.center[1],
         r: item.radius,
-        class: warningNames.has(item.name) ? "circle-line circle-warning" : "circle-line"
+        class: [
+          "circle-line",
+          item.kind === "pulley" ? "circle-pulley" : "circle-idler",
+          warningNames.has(item.name) ? "circle-warning" : ""
+        ].filter(Boolean).join(" ")
       }));
       appendLine(geometry, [item.center[0] - 1.8, item.center[1]], [item.center[0] + 1.8, item.center[1]], "center-mark");
       appendLine(geometry, [item.center[0], item.center[1] - 1.8], [item.center[0], item.center[1] + 1.8], "center-mark");
@@ -1108,7 +1161,7 @@
       const labelY = item.name === "pulleyO"
         ? item.center[1] - item.radius - 5
         : item.center[1] + item.radius + 3;
-      appendText(svg, label, item.center[0], labelY, "plot-label");
+      appendPillText(svg, label, item.center[0], labelY, "plot-label", PLOT_LABEL_FONT_SIZE);
     });
 
     dimensions.forEach((dimension) => {
@@ -1162,6 +1215,17 @@
       }
       control.range.value = value;
       control.number.value = value;
+      updateRangeProgress(control.range);
+    }
+
+    function updateRangeProgress(range) {
+      const min = Number.parseFloat(range.min);
+      const max = Number.parseFloat(range.max);
+      const value = Number.parseFloat(range.value);
+      const percent = Number.isFinite(min) && Number.isFinite(max) && Number.isFinite(value) && max > min
+        ? Math.min(100, Math.max(0, (value - min) / (max - min) * 100))
+        : 0;
+      range.style.setProperty("--range-progress", `${percent}%`);
     }
 
     function appendMetric(label, value, tone) {
@@ -1197,12 +1261,12 @@
       const residualTone = Math.abs(d.beltResidual) > 0.05 ? "warning" : "";
       const clearanceTone = d.clearanceWarnings.length ? "danger" : "";
 
-      appendMetric("Ratio", `${formatNumber(d.ratio, 2)}:1`);
-      appendMetric("Belt", teeth, toothError < 1e-6 ? "" : "warning");
+      appendMetric("Drive Ratio", `${formatNumber(d.ratio, 2)}:1`);
+      appendMetric("Belt Teeth", teeth, toothError < 1e-6 ? "" : "warning");
       appendMetric(
         "Neutral Y",
         state.solvedIdlerYNominal === null ? "unsolved" : `${formatNumber(state.solvedIdlerYNominal, 2)} mm`,
-        state.solvedIdlerYNominal === null ? "danger" : ""
+        state.solvedIdlerYNominal === null ? "danger" : "primary"
       );
       appendMetric("Offset", `${p.tension_offset_mm >= 0 ? "+" : ""}${formatNumber(p.tension_offset_mm, 1)} mm`, offsetTone);
       appendMetric("Residual", `${d.beltResidual >= 0 ? "+" : ""}${formatNumber(d.beltResidual, 3)} mm`, residualTone);
@@ -1276,6 +1340,7 @@
       }
       control.range.value = parsed;
       control.number.value = parsed;
+      updateRangeProgress(control.range);
       if (SOLVER_INPUTS.has(name)) {
         solveAndRender();
       } else {
@@ -1333,6 +1398,7 @@
       range.step = String(step);
       range.value = DEFAULTS[name];
       range.setAttribute("aria-label", label);
+      updateRangeProgress(range);
 
       field.append(labelNode, number, unitNode, range);
       document.getElementById(containerId).appendChild(field);
