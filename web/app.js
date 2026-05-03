@@ -813,16 +813,23 @@
     svg.appendChild(grid);
   }
 
-  function dimLine(svg, geometryGroup, p1, p2, text, offset) {
+  function dimLine(svg, geometryGroup, p1, p2, text, offset, labelOffset) {
     const a = [p1[0] + offset[0], p1[1] + offset[1]];
     const b = [p2[0] + offset[0], p2[1] + offset[1]];
+    const labelShift = labelOffset || [0, 0];
     appendLine(geometryGroup, a, b, "dimension-line", {
       "marker-start": "url(#arrow)",
       "marker-end": "url(#arrow)"
     });
     appendLine(geometryGroup, p1, a, "extension-line");
     appendLine(geometryGroup, p2, b, "extension-line");
-    appendText(svg, text, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, "dimension-label");
+    appendText(
+      svg,
+      text,
+      (a[0] + b[0]) / 2 + labelShift[0],
+      (a[1] + b[1]) / 2 + labelShift[1],
+      "dimension-label"
+    );
   }
 
   function drawLayout(svg, inputParams, modelP, sol, d, state) {
@@ -846,9 +853,9 @@
     svg.appendChild(defs);
 
     const items = circles(modelP);
-    const margin = 35;
-    const xPad = modelP.idlerX + Math.max(d.pulleyOPitchR, d.idlerEffR) + 22;
-    const yPad = Math.max(modelP.motorY, modelP.idlerY, 0) + Math.max(d.pulleyIPitchR, d.idlerEffR) + 18;
+    const margin = 22;
+    const xPad = modelP.idlerX + Math.max(d.pulleyOPitchR, d.idlerEffR) + 24;
+    const yPad = Math.max(modelP.motorY, modelP.idlerY, 0) + Math.max(d.pulleyIPitchR, d.idlerEffR) + 14;
     const slotYMin = state.solvedIdlerYNominal !== null
       ? state.solvedIdlerYNominal - inputParams.tension_slot_travel_mm / 2
       : modelP.idlerY;
@@ -862,6 +869,7 @@
     const maxY = Math.max(modelP.motorY + d.pulleyIPitchR, modelP.idlerY + d.idlerEffR, slotYMax, yPad) + margin;
 
     svg.setAttribute("viewBox", `${minX} ${-maxY} ${maxX - minX} ${maxY - minY}`);
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
     drawGrid(svg, minX, maxX, minY, maxY);
 
@@ -932,7 +940,8 @@
       [-modelP.idlerX, modelP.idlerY],
       [modelP.idlerX, modelP.idlerY],
       `idler span ${(2 * modelP.idlerX).toFixed(1)}`,
-      [0, 12]
+      [0, 23],
+      [0, 3]
     );
     dimLine(
       svg,
@@ -940,7 +949,8 @@
       [0, 0],
       [modelP.idlerX, modelP.idlerY],
       `O-idler ${d.centerOIdler.toFixed(1)}`,
-      [8, -8]
+      [8, -8],
+      [7, -1]
     );
     dimLine(
       svg,
@@ -948,7 +958,8 @@
       [0, modelP.motorY],
       [modelP.idlerX, modelP.idlerY],
       `I-idler ${d.centerIIdler.toFixed(1)}`,
-      [8, 8]
+      [8, 8],
+      [8, 0]
     );
   }
 

@@ -1,19 +1,22 @@
 :root {
   color-scheme: light;
-  --page: #eef2ef;
+  --page: #f1f3ef;
   --panel: #ffffff;
-  --panel-strong: #fbfcfa;
-  --panel-muted: #f6f8f5;
-  --ink: #222321;
-  --muted: #676b63;
-  --line: #d8ddd2;
-  --line-strong: #aeb7aa;
+  --panel-strong: #fcfcfa;
+  --panel-muted: #f7f8f4;
+  --ink: #1f211d;
+  --muted: #63695f;
+  --line: #d6dccf;
+  --line-strong: #a9b3a2;
   --accent: #1d6f5f;
   --accent-strong: #145347;
+  --accent-soft: #e6f2ee;
   --warning: #a74300;
   --danger: #b42318;
   --belt: #111111;
   --focus: #176c9d;
+  --shadow-soft: 0 8px 24px rgba(40, 48, 36, 0.08);
+  --shadow-tight: 0 1px 2px rgba(40, 48, 36, 0.07);
 }
 
 * {
@@ -80,13 +83,13 @@ select:focus-visible {
 
 .topbar {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.8rem 1rem;
+  padding: 0.9rem 1.25rem;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
-  box-shadow: 0 1px 0 rgba(34, 35, 33, 0.03);
+  box-shadow: 0 1px 0 rgba(34, 35, 33, 0.05);
 }
 
 .topbar h1 {
@@ -103,18 +106,24 @@ select:focus-visible {
 }
 
 .status {
-  max-width: 48rem;
+  max-width: min(48rem, 48vw);
+  border: 1px solid #b8cec6;
+  border-radius: 999px;
+  background: var(--accent-soft);
   color: var(--accent-strong);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.2;
+  padding: 0.35rem 0.65rem;
   text-align: right;
 }
 
 .workspace {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-  gap: 0.75rem;
-  padding: 0.75rem;
+  grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
 }
 
 .control-pane {
@@ -123,8 +132,8 @@ select:focus-visible {
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding-right: 0.15rem;
+  gap: 0.85rem;
+  padding-right: 0.2rem;
   scrollbar-width: thin;
 }
 
@@ -137,31 +146,37 @@ select:focus-visible {
   overflow: hidden;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.74);
 }
 
 .metrics-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.5rem;
   align-items: center;
   min-width: 0;
-  min-height: 2.75rem;
-  padding: 0.45rem 0.6rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.65rem;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .metric {
   display: inline-flex;
   align-items: baseline;
   gap: 0.35rem;
-  min-height: 1.7rem;
+  min-height: 1.85rem;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--panel-muted);
-  padding: 0.18rem 0.45rem;
+  padding: 0.22rem 0.5rem;
+  box-shadow: 0 1px 0 rgba(40, 48, 36, 0.04);
   white-space: nowrap;
+}
+
+.metric:nth-child(3):not(.warning):not(.danger) {
+  border-color: #a9c6bd;
+  background: var(--accent-soft);
 }
 
 .metric-label {
@@ -171,7 +186,7 @@ select:focus-visible {
 
 .metric-value {
   color: var(--ink);
-  font-size: 0.84rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -203,12 +218,16 @@ select:focus-visible {
 .toolbar {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.55rem;
   position: sticky;
   top: 0;
   z-index: 2;
-  padding-bottom: 0.1rem;
+  padding: 0 0 0.12rem;
   background: var(--page);
+}
+
+.toolbar button {
+  font-weight: 650;
 }
 
 .toolbar button:first-child {
@@ -227,12 +246,13 @@ select:focus-visible {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
-  padding: 0.85rem;
-  box-shadow: 0 1px 2px rgba(34, 35, 33, 0.04);
+  padding: 0.95rem;
+  box-shadow: var(--shadow-tight);
 }
 
 .panel h2 {
-  margin: 0 0 0.7rem;
+  margin: 0 0 0.8rem;
+  color: #20251f;
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -240,14 +260,17 @@ select:focus-visible {
 
 .control-list {
   display: grid;
-  gap: 0.6rem;
+  gap: 0;
+  border-top: 1px solid var(--line);
 }
 
 .field {
   display: grid;
-  grid-template-columns: minmax(8.5rem, 1fr) minmax(6.75rem, 8.5rem) 3.1rem;
+  grid-template-columns: minmax(9rem, 1fr) minmax(5.8rem, 8.2rem) 2.9rem;
   align-items: center;
   gap: 0.45rem 0.55rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.88rem;
 }
@@ -255,13 +278,15 @@ select:focus-visible {
 .field.compact {
   grid-template-columns: minmax(8.5rem, 1fr) minmax(8rem, 1fr);
   margin-bottom: 0.6rem;
+  padding: 0 0 0.65rem;
+  border-bottom: 0;
 }
 
 .field input[type="range"] {
   grid-column: 1 / -1;
   width: 100%;
   accent-color: var(--accent);
-  margin: 0.1rem 0 0.05rem;
+  margin: 0;
 }
 
 .field input[type="number"],
@@ -272,7 +297,12 @@ select:focus-visible {
   border-radius: 6px;
   background: #ffffff;
   color: var(--ink);
-  padding: 0.4rem 0.45rem;
+  padding: 0.38rem 0.45rem;
+}
+
+.field input[type="number"]:hover,
+.field select:hover {
+  border-color: var(--accent);
 }
 
 .field input:disabled {
@@ -308,12 +338,12 @@ select:focus-visible {
 }
 
 .plot-grid {
-  stroke: #d9dfd6;
+  stroke: #e1e6dc;
   stroke-width: 0.45;
 }
 
 .axis-line {
-  stroke: #657063;
+  stroke: #6e786a;
   stroke-width: 0.75;
   stroke-dasharray: 4 4;
 }
@@ -341,13 +371,13 @@ select:focus-visible {
 }
 
 .dimension-line {
-  stroke: #5f685c;
+  stroke: #677063;
   stroke-width: 0.62;
   fill: none;
 }
 
 .extension-line {
-  stroke: #838c7f;
+  stroke: #8c9688;
   stroke-width: 0.48;
   stroke-dasharray: 2.5 2.5;
 }
@@ -367,11 +397,11 @@ select:focus-visible {
 }
 
 .dimension-label {
-  fill: #343a31;
-  font-size: 3.25px;
+  fill: #31372f;
+  font-size: 3.45px;
   paint-order: stroke;
   stroke: #ffffff;
-  stroke-width: 2.8px;
+  stroke-width: 3.2px;
   stroke-linejoin: round;
 }
 
@@ -403,12 +433,14 @@ select:focus-visible {
   }
 
   .status {
+    max-width: 100%;
     text-align: left;
   }
 
   .workspace {
     grid-template-columns: minmax(0, 1fr);
     min-height: auto;
+    gap: 0.75rem;
   }
 
   .control-pane {
@@ -420,6 +452,7 @@ select:focus-visible {
     min-width: 0;
     position: sticky;
     top: 0;
+    padding-top: 0.35rem;
   }
 
   .plot-pane {
