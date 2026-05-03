@@ -17,6 +17,18 @@ const gt3Variant = {
   idler_x_offset_mm: 32.0
 };
 
+const straySpanFixture = {
+  beltPitch: 5.0,
+  beltLength: 596.2772811633768,
+  pulleyITeeth: 66,
+  pulleyOTeeth: 81,
+  idlerOD: 48.79071618424381,
+  beltBackToPitch: 0.0,
+  motorY: 95.00006317942966,
+  idlerX: 96.52267216524247,
+  idlerY: 19.171666193473275
+};
+
 function solveInputParams(inputParams) {
   const baseModel = api.modelParams(inputParams, 0.0);
   const result = api.solveIdlerY(baseModel);
@@ -48,6 +60,13 @@ test("alternate GT3-style fixture solves and preserves belt length", () => {
   assert.ok(Math.abs(result.y - 38.2216779232025) < 1e-9);
   assert.ok(Math.abs(solution.length - gt3Variant.belt_length_mm) < 1e-6);
   assert.ok(Math.abs(derived.beltResidual) < 1e-6);
+});
+
+test("solver rejects tangent spans that hit non-contact circles", () => {
+  const solution = api.beltSolution(straySpanFixture);
+
+  assert.equal(solution.valid, false);
+  assert.match(solution.reason, /unintended pulley\/idler contact/);
 });
 
 test("idler X solver recovers the default half-spacing", () => {

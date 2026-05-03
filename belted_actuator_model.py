@@ -172,6 +172,17 @@ def segment_intersection(a: Point, b: Point, c: Point, d: Point) -> bool:
     return False
 
 
+def point_segment_distance(p: Point, a: Point, b: Point) -> float:
+    ab = sub(b, a)
+    denom = dot(ab, ab)
+    if denom <= 1e-18:
+        return norm(sub(p, a))
+
+    t = max(0.0, min(1.0, dot(sub(p, a), ab) / denom))
+    q = add(a, mul(ab, t))
+    return norm(sub(p, q))
+
+
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
@@ -295,6 +306,18 @@ class BeltModel:
             if crossed:
                 continue
 
+            # A straight belt span may only touch its two endpoint circles.
+            # Reject candidates where the span passes through any other
+            # pulley/idler disk; line-line crossing alone does not catch this.
+            obstructed = any(
+                point_segment_distance(other.center, edges[i][0], edges[i][1]) < other.radius - 1e-9
+                for i in range(n)
+                for other in circles
+                if other.name not in (circles[i].name, circles[(i + 1) % n].name)
+            )
+            if obstructed:
+                continue
+
             line_len = sum(norm(sub(b, a)) for a, b in edges)
             arc_len = 0.0
             arcs: Dict[str, List[Point]] = {}
@@ -322,7 +345,7 @@ class BeltModel:
         if best is None:
             return BeltSolution(
                 math.inf, math.inf, math.inf, [], {}, {}, False,
-                "No non-crossing backside-idler belt path found.",
+                "No valid backside-idler belt path found without span crossings or unintended pulley/idler contact.",
             )
         return best[1]
 
@@ -374,7 +397,7 @@ class BeltModel:
 
         if bracket is None:
             if min_valid is None or max_valid is None:
-                return None, "No valid non-crossing backside-idler belt path exists for this geometry."
+                return None, "No valid backside-idler belt path exists for this geometry."
             if target < min_valid[1]:
                 return None, (
                     f"Selected belt is too short. "
@@ -386,7 +409,7 @@ class BeltModel:
                     f"Longest valid path found is {max_valid[1]:.3f} mm at idlerX {max_valid[0]:.3f} mm."
                 )
             return None, (
-                "Could not solve idlerX for this belt length without crossing or wrong-side idler wrap. "
+                "Could not solve idlerX for this belt length without crossing, unintended contact, or wrong-side idler wrap. "
                 "Change belt length, belt type, motorY, idlerY, or pulley/idler sizes."
             )
 
@@ -486,7 +509,7 @@ class BeltModel:
 
         if not deduped:
             if min_valid is None or max_valid is None:
-                return None, [], "No valid non-crossing backside-idler belt path exists for this geometry."
+                return None, [], "No valid backside-idler belt path exists for this geometry."
             if target < min_valid[1]:
                 return None, [], (
                     f"Selected belt is too short. "
@@ -497,7 +520,7 @@ class BeltModel:
                     f"Selected belt is too long. "
                     f"Longest valid path found is {max_valid[1]:.3f} mm at idlerY {max_valid[0]:.3f} mm."
                 )
-            return None, [], "Could not solve idlerY for this belt length without crossing or wrong-side idler wrap."
+            return None, [], "Could not solve idlerY for this belt length without crossing, unintended contact, or wrong-side idler wrap."
 
         def score(y: float) -> float:
             p = dict(params)

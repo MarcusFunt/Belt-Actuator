@@ -184,6 +184,18 @@
     return false;
   }
 
+  function pointSegmentDistance(point, a, b) {
+    const ab = sub(b, a);
+    const denom = dot(ab, ab);
+    if (denom <= 1e-18) {
+      return norm(sub(point, a));
+    }
+
+    const t = Math.max(0.0, Math.min(1.0, dot(sub(point, a), ab) / denom));
+    const q = add(a, mul(ab, t));
+    return norm(sub(point, q));
+  }
+
   function targetLength(params) {
     return Object.prototype.hasOwnProperty.call(params, "beltLength")
       ? params.beltLength
@@ -298,6 +310,19 @@
         }
       }
 
+      for (let i = 0; i < n; i += 1) {
+        const endpointNames = new Set([ordered[i].name, ordered[(i + 1) % n].name]);
+        for (let j = 0; j < n; j += 1) {
+          const other = ordered[j];
+          if (
+            !endpointNames.has(other.name) &&
+            pointSegmentDistance(other.center, edges[i][0], edges[i][1]) < other.radius - 1e-9
+          ) {
+            return;
+          }
+        }
+      }
+
       const lineLength = edges.reduce((total, edge) => total + norm(sub(edge[1], edge[0])), 0.0);
       let arcLength = 0.0;
       const arcPoints = {};
@@ -336,7 +361,7 @@
     });
 
     if (best === null) {
-      return invalidSolution("No non-crossing backside-idler belt path found.");
+      return invalidSolution("No valid backside-idler belt path found without span crossings or unintended pulley/idler contact.");
     }
     return best.solution;
   }
@@ -432,7 +457,7 @@
 
     if (!deduped.length) {
       if (minValid === null || maxValid === null) {
-        return { y: null, candidates: [], message: "No valid non-crossing backside-idler belt path exists for this geometry." };
+        return { y: null, candidates: [], message: "No valid backside-idler belt path exists for this geometry." };
       }
       if (target < minValid.length) {
         return {
@@ -451,7 +476,7 @@
       return {
         y: null,
         candidates: [],
-        message: "Could not solve idlerY for this belt length without crossing or wrong-side idler wrap."
+        message: "Could not solve idlerY for this belt length without crossing, unintended contact, or wrong-side idler wrap."
       };
     }
 
@@ -531,7 +556,7 @@
 
     if (bracket === null) {
       if (minValid === null || maxValid === null) {
-        return { x: null, message: "No valid non-crossing backside-idler belt path exists for this geometry." };
+        return { x: null, message: "No valid backside-idler belt path exists for this geometry." };
       }
       if (target < minValid.length) {
         return {
@@ -547,7 +572,7 @@
       }
       return {
         x: null,
-        message: "Could not solve idlerX for this belt length without crossing or wrong-side idler wrap. Change belt length, belt type, motorY, idlerY, or pulley/idler sizes."
+        message: "Could not solve idlerX for this belt length without crossing, unintended contact, or wrong-side idler wrap. Change belt length, belt type, motorY, idlerY, or pulley/idler sizes."
       };
     }
 

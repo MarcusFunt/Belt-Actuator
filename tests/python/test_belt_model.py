@@ -28,6 +28,18 @@ GT3_VARIANT = {
     "idlerY": 0.0,
 }
 
+STRAY_SPAN_FIXTURE = {
+    "beltPitch": 5.0,
+    "beltLength": 596.2772811633768,
+    "pulleyITeeth": 66,
+    "pulleyOTeeth": 81,
+    "idlerOD": 48.79071618424381,
+    "beltBackToPitch": 0.0,
+    "motorY": 95.00006317942966,
+    "idlerX": 96.52267216524247,
+    "idlerY": 19.171666193473275,
+}
+
 
 class GeometryHelperTests(unittest.TestCase):
     def test_tangent_options_place_points_on_each_circle(self):
@@ -80,6 +92,12 @@ class BeltModelTests(unittest.TestCase):
         solution = BeltModel.belt_solution({**GT3_VARIANT, "idlerY": y})
         self.assertTrue(solution.valid, solution.reason)
         self.assertAlmostEqual(solution.length, GT3_VARIANT["beltLength"], places=6)
+
+    def test_rejects_tangent_spans_that_hit_non_contact_circles(self):
+        solution = BeltModel.belt_solution(STRAY_SPAN_FIXTURE)
+
+        self.assertFalse(solution.valid)
+        self.assertIn("unintended pulley/idler contact", solution.reason)
 
     def test_solve_idler_x_recovers_default_half_spacing(self):
         y, _, _ = BeltModel.solve_idler_y(DEFAULT_MODEL)
