@@ -195,11 +195,14 @@ test("controls handle custom profile, invalid geometry, reset, warning, and CSV 
       csv += chunk.toString("utf8");
     }
     assert.ok(csv.startsWith("Name,Unit,Expression,Value,Comments,Favorite"));
-    assert.match(csv, /^Name,Unit,Expression,Value,Comments,Favorite\r?\nbelt_profile_code,No Units,1,,/);
+    assert.match(csv, /^Name,Unit,Expression,Value,Comments,Favorite\r?\nbelt_profile_code,,1,1,/);
     assert.ok(csv.includes("belt_pitch_mm,mm"));
+    assert.ok(csv.includes("belt_teeth,,132,132"));
+    assert.ok(csv.includes("belt_length_mm,mm,belt_teeth*belt_pitch_mm"));
     assert.ok(csv.includes("belt_back_to_pitch_mm,mm"));
-    assert.ok(csv.includes("PLACEHOLDER - verify for your build"));
-    assert.equal(csv.trim().split(/\r?\n/).length, 45);
+    assert.ok(csv.includes("idler_pitch_r_mm,mm,idler_r_mm+belt_back_to_pitch_mm"));
+    assert.ok(csv.includes("NEMA17 hole spacing placeholder"));
+    assert.equal(csv.trim().split(/\r?\n/).length, 46);
     assert.deepEqual(diagnostics, []);
   } finally {
     await context.close();

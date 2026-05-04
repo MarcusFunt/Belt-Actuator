@@ -11,7 +11,6 @@
   const CUSTOM_BELT_TYPE = "Custom";
   const BELT_BACK_TO_PITCH = 0.0;
   const NUMBER_INPUT_DEBOUNCE_MS = 150;
-  const PLACEHOLDER_WARNING = "PLACEHOLDER - verify for your build.";
   const PLOT_LABEL_FONT_SIZE = 4;
   const DIMENSION_LABEL_FONT_SIZE = 3.45;
   const ERROR_LABEL_FONT_SIZE = 4.6;
@@ -670,10 +669,6 @@
     return Number.isFinite(value) ? value.toFixed(digits) : "inf";
   }
 
-  function placeholderComment(text) {
-    return `${PLACEHOLDER_WARNING} ${text}`;
-  }
-
   function fusionRows(inputParams, beltType, nominalY) {
     if (nominalY === null || nominalY === undefined) {
       throw new Error("Cannot export Fusion CSV before the solver finds a neutral idler Y.");
@@ -687,57 +682,90 @@
       return `${value.toFixed(4)} mm`;
     }
 
+    function cleanNumber(value, digits) {
+      if (!Number.isFinite(value)) {
+        return "";
+      }
+      const fixed = value.toFixed(digits);
+      return fixed.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+    }
+
+    function fixedNumber(value, digits) {
+      return Number.isFinite(value) ? value.toFixed(digits) : "";
+    }
+
+    function toothCount(value) {
+      return Math.abs(value - Math.round(value)) < 1e-9
+        ? String(Math.round(value))
+        : cleanNumber(value, 4);
+    }
+
+    function row(name, unit, expression, value, comment, favorite) {
+      return [name, unit, expression, value, comment, favorite ? "true" : "false"];
+    }
+
     const beltTypeCodes = { GT2: 1, GT3: 2, "HTD-3M": 3, "HTD-5M": 4, MXL: 5 };
     const beltTypeCode = beltTypeCodes[beltType] || 0;
-    const beltTypeComment = `Belt profile: ${beltType}. 0=Custom, 1=GT2, 2=GT3, 3=HTD-3M, 4=HTD-5M, 5=MXL.`;
+    const beltTypeComment = beltType === CUSTOM_BELT_TYPE
+      ? "Custom profile code"
+      : `${beltType} profile code`;
+    const beltPitchComment = beltType === CUSTOM_BELT_TYPE
+      ? "Custom belt pitch"
+      : `${beltType} belt pitch`;
+    const beltTeeth = d.beltTeethExact;
+    const pulleyITeeth = Math.round(inputParams.pulleyI_teeth);
+    const pulleyOTeeth = Math.round(inputParams.pulleyO_teeth);
+    const idlerBoltDia = 5.0;
+    const idlerBoltClearanceDia = idlerBoltDia + 0.4;
 
     const rows = [
-      ["belt_profile_code", "No Units", String(beltTypeCode), beltTypeComment],
-      ["belt_pitch_mm", "mm", mm(inputParams.belt_pitch_mm), "Timing belt tooth pitch."],
-      ["belt_length_mm", "mm", mm(inputParams.belt_length_mm), "Closed-loop belt pitch length."],
-      ["belt_teeth_exact", "No Units", "belt_length_mm/belt_pitch_mm", "Implied closed belt tooth count; should be an integer for real belts."],
-      ["pulleyI_teeth", "No Units", String(Math.round(inputParams.pulleyI_teeth)), "Input/motor timing pulley tooth count."],
-      ["pulleyO_teeth", "No Units", String(Math.round(inputParams.pulleyO_teeth)), "Output timing pulley tooth count."],
-      ["ratio", "No Units", "pulleyO_teeth/pulleyI_teeth", "Reduction ratio."],
-      ["pulleyI_pitch_dia_mm", "mm", "pulleyI_teeth*belt_pitch_mm/PI", "Input pulley pitch diameter."],
-      ["pulleyO_pitch_dia_mm", "mm", "pulleyO_teeth*belt_pitch_mm/PI", "Output pulley pitch diameter."],
-      ["pulleyI_pitch_r_mm", "mm", "pulleyI_pitch_dia_mm/2", "Input pulley pitch radius."],
-      ["pulleyO_pitch_r_mm", "mm", "pulleyO_pitch_dia_mm/2", "Output pulley pitch radius."],
-      ["idler_OD_mm", "mm", mm(inputParams.idler_OD_mm), "Smooth backside idler outside diameter."],
-      ["idler_r_mm", "mm", "idler_OD_mm/2", "Smooth idler physical radius."],
-      ["belt_back_to_pitch_mm", "mm", mm(inputParams.belt_back_to_pitch_mm ?? BELT_BACK_TO_PITCH), "Offset from belt back surface to pitch line; affects backside idler pitch radius."],
-      ["center_IO_mm", "mm", mm(inputParams.center_IO_mm), "Vertical center distance between output and input pulley."],
-      ["idler_x_offset_mm", "mm", mm(inputParams.idler_x_offset_mm), "Horizontal half-spacing from centerline to either idler."],
-      ["tension_slot_travel_mm", "mm", mm(inputParams.tension_slot_travel_mm), "Total travel range of the shared idler pod."],
-      ["tension_offset_mm", "mm", mm(inputParams.tension_offset_mm), "Current idler-pod displacement from the solved neutral position."],
-      ["belt_visual_thickness_mm", "mm", mm(inputParams.belt_visual_thickness_mm), "Visual belt thickness in the 2D drawing only."],
-      ["minimum_clearance_mm", "mm", mm(inputParams.minimum_clearance_mm), "Clearance warning threshold between 2D circular parts."],
-      ["output_x_mm", "mm", "0 mm", "Output pulley center X. Layout origin."],
-      ["output_y_mm", "mm", "0 mm", "Output pulley center Y. Layout origin."],
-      ["input_x_mm", "mm", "0 mm", "Input pulley center X. Symmetry centerline."],
-      ["input_y_mm", "mm", "center_IO_mm", "Input pulley center Y above output."],
-      ["idler_y_nominal_mm", "mm", mm(d.idlerYNominal), "Solved idler Y at zero tension offset."],
-      ["idler_y_mm", "mm", "idler_y_nominal_mm+tension_offset_mm", "Current shared idler Y coordinate."],
-      ["idler1_x_mm", "mm", "-idler_x_offset_mm", "Left idler center X."],
-      ["idler1_y_mm", "mm", "idler_y_mm", "Left idler center Y."],
-      ["idler2_x_mm", "mm", "idler_x_offset_mm", "Right idler center X."],
-      ["idler2_y_mm", "mm", "idler_y_mm", "Right idler center Y."],
-      ["center_I_idler_mm", "mm", mm(d.centerIIdler), "Computed center distance from input pulley to either idler at current offset."],
-      ["center_O_idler_mm", "mm", mm(d.centerOIdler), "Computed center distance from output pulley to either idler at current offset."],
-      ["idler_span_mm", "mm", "2*idler_x_offset_mm", "Distance between the two idler centers."],
-      ["motor_mount_hole_spacing_mm", "mm", "31 mm", placeholderComment("NEMA17 mounting hole spacing.")],
-      ["motor_screw_clearance_dia_mm", "mm", "3.4 mm", placeholderComment("M3 clearance hole.")],
-      ["motor_pilot_clearance_dia_mm", "mm", "23 mm", placeholderComment("Typical NEMA17 pilot clearance.")],
-      ["output_shaft_dia_mm", "mm", "8 mm", placeholderComment("Output shaft diameter.")],
-      ["output_bearing_OD_mm", "mm", "16 mm", placeholderComment("Output bearing OD, e.g. 688 bearing.")],
-      ["output_bearing_width_mm", "mm", "5 mm", placeholderComment("Output bearing width.")],
-      ["idler_bolt_dia_mm", "mm", "5 mm", placeholderComment("Idler bearing mounting bolt diameter.")],
-      ["idler_bolt_clearance_dia_mm", "mm", "idler_bolt_dia_mm+0.4 mm", placeholderComment("Idler bolt clearance hole.")],
-      ["slot_length_mm", "mm", "tension_slot_travel_mm+idler_bolt_dia_mm", placeholderComment("Idler tension slot length.")],
-      ["slot_width_mm", "mm", "idler_bolt_clearance_dia_mm", placeholderComment("Idler tension slot width.")],
-      ["wall_thickness_mm", "mm", "3 mm", placeholderComment("General structural wall thickness.")]
+      row("belt_profile_code", "", String(beltTypeCode), String(beltTypeCode), beltTypeComment, false),
+      row("belt_pitch_mm", "mm", mm(inputParams.belt_pitch_mm), cleanNumber(inputParams.belt_pitch_mm, 4), beltPitchComment, false),
+      row("belt_teeth", "", toothCount(beltTeeth), toothCount(beltTeeth), "Closed belt tooth count", true),
+      row("belt_length_mm", "mm", "belt_teeth*belt_pitch_mm", cleanNumber(inputParams.belt_length_mm, 3), "Closed belt pitch length", true),
+      row("pulleyI_teeth", "", String(pulleyITeeth), String(pulleyITeeth), "Input pulley teeth", true),
+      row("pulleyO_teeth", "", String(pulleyOTeeth), String(pulleyOTeeth), "Output pulley teeth", true),
+      row("ratio", "", "pulleyO_teeth/pulleyI_teeth", cleanNumber(d.ratio, 4), "Reduction ratio", true),
+      row("pulleyI_pitch_dia_mm", "mm", "pulleyI_teeth*belt_pitch_mm/PI", cleanNumber(d.pulleyIPitchDia, 3), "Input pulley pitch diameter", false),
+      row("pulleyO_pitch_dia_mm", "mm", "pulleyO_teeth*belt_pitch_mm/PI", cleanNumber(d.pulleyOPitchDia, 3), "Output pulley pitch diameter", false),
+      row("pulleyI_pitch_r_mm", "mm", "pulleyI_pitch_dia_mm/2", cleanNumber(d.pulleyIPitchR, 3), "Input pulley pitch radius", false),
+      row("pulleyO_pitch_r_mm", "mm", "pulleyO_pitch_dia_mm/2", cleanNumber(d.pulleyOPitchR, 3), "Output pulley pitch radius", false),
+      row("idler_OD_mm", "mm", mm(inputParams.idler_OD_mm), fixedNumber(inputParams.idler_OD_mm, 2), "Smooth idler outside diameter", true),
+      row("idler_r_mm", "mm", "idler_OD_mm/2", cleanNumber(d.idlerR, 3), "Smooth idler radius", false),
+      row("belt_back_to_pitch_mm", "mm", mm(d.beltBackToPitch), fixedNumber(d.beltBackToPitch, 2), "Backside idler pitch offset", false),
+      row("idler_pitch_r_mm", "mm", "idler_r_mm+belt_back_to_pitch_mm", cleanNumber(d.idlerEffR, 3), "Effective idler pitch radius", false),
+      row("center_IO_mm", "mm", mm(inputParams.center_IO_mm), cleanNumber(inputParams.center_IO_mm, 3), "Input to output center distance", true),
+      row("idler_x_offset_mm", "mm", mm(inputParams.idler_x_offset_mm), fixedNumber(inputParams.idler_x_offset_mm, 2), "Horizontal idler half spacing", true),
+      row("tension_slot_travel_mm", "mm", mm(inputParams.tension_slot_travel_mm), fixedNumber(inputParams.tension_slot_travel_mm, 2), "Total tension slot travel", true),
+      row("tension_offset_mm", "mm", mm(inputParams.tension_offset_mm), fixedNumber(inputParams.tension_offset_mm, 2), "Current tension displacement", true),
+      row("belt_visual_thickness_mm", "mm", mm(inputParams.belt_visual_thickness_mm), cleanNumber(inputParams.belt_visual_thickness_mm, 3), "Visual belt thickness only", false),
+      row("minimum_clearance_mm", "mm", mm(inputParams.minimum_clearance_mm), cleanNumber(inputParams.minimum_clearance_mm, 3), "2D clearance warning limit", false),
+      row("output_x_mm", "mm", "0 mm", fixedNumber(0, 2), "Output center X", false),
+      row("output_y_mm", "mm", "0 mm", fixedNumber(0, 2), "Output center Y", false),
+      row("input_x_mm", "mm", "0 mm", fixedNumber(0, 2), "Input center X", false),
+      row("input_y_mm", "mm", "center_IO_mm", cleanNumber(inputParams.center_IO_mm, 3), "Input center Y", false),
+      row("idler_y_nominal_mm", "mm", mm(d.idlerYNominal), cleanNumber(d.idlerYNominal, 3), "Solved idler Y neutral", true),
+      row("idler_y_mm", "mm", "idler_y_nominal_mm+tension_offset_mm", cleanNumber(d.idlerYActual, 3), "Current idler Y", false),
+      row("idler1_x_mm", "mm", "-idler_x_offset_mm", fixedNumber(-inputParams.idler_x_offset_mm, 2), "Left idler X", false),
+      row("idler1_y_mm", "mm", "idler_y_mm", cleanNumber(d.idlerYActual, 3), "Left idler Y", false),
+      row("idler2_x_mm", "mm", "idler_x_offset_mm", fixedNumber(inputParams.idler_x_offset_mm, 2), "Right idler X", false),
+      row("idler2_y_mm", "mm", "idler_y_mm", cleanNumber(d.idlerYActual, 3), "Right idler Y", false),
+      row("center_I_idler_mm", "mm", "sqrt(idler_x_offset_mm^2+(input_y_mm-idler_y_mm)^2)", cleanNumber(d.centerIIdler, 3), "Input to idler distance", false),
+      row("center_O_idler_mm", "mm", "sqrt(idler_x_offset_mm^2+(idler_y_mm-output_y_mm)^2)", cleanNumber(d.centerOIdler, 3), "Output to idler distance", false),
+      row("idler_span_mm", "mm", "2*idler_x_offset_mm", fixedNumber(d.idlerSpan, 2), "Distance between idler centers", false),
+      row("motor_mount_hole_spacing_mm", "mm", "31 mm", fixedNumber(31, 2), "NEMA17 hole spacing placeholder", true),
+      row("motor_screw_clearance_dia_mm", "mm", "3.4 mm", cleanNumber(3.4, 2), "M3 screw clearance placeholder", false),
+      row("motor_pilot_clearance_dia_mm", "mm", "23 mm", fixedNumber(23, 2), "NEMA17 pilot clearance placeholder", false),
+      row("output_shaft_dia_mm", "mm", "8 mm", fixedNumber(8, 2), "Output shaft diameter placeholder", true),
+      row("output_bearing_OD_mm", "mm", "16 mm", fixedNumber(16, 2), "Output bearing OD placeholder", true),
+      row("output_bearing_width_mm", "mm", "5 mm", fixedNumber(5, 2), "Output bearing width placeholder", false),
+      row("idler_bolt_dia_mm", "mm", "5 mm", fixedNumber(idlerBoltDia, 2), "Idler bolt diameter placeholder", true),
+      row("idler_bolt_clearance_dia_mm", "mm", "idler_bolt_dia_mm+0.4 mm", cleanNumber(idlerBoltClearanceDia, 2), "Idler bolt clearance hole", false),
+      row("slot_length_mm", "mm", "tension_slot_travel_mm+idler_bolt_dia_mm", fixedNumber(inputParams.tension_slot_travel_mm + idlerBoltDia, 2), "Idler tension slot length", false),
+      row("slot_width_mm", "mm", "idler_bolt_clearance_dia_mm", cleanNumber(idlerBoltClearanceDia, 2), "Idler tension slot width", false),
+      row("wall_thickness_mm", "mm", "3 mm", fixedNumber(3, 2), "General wall thickness", true)
     ];
-    return rows.map(([name, unit, expression, comment]) => [name, unit, expression, "", comment, "false"]);
+    return rows;
   }
 
   function diagnosticsText(inputParams, beltType, state, modelP, sol, d) {

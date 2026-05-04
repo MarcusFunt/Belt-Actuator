@@ -17,6 +17,22 @@ const gt3Variant = {
   idler_x_offset_mm: 32.0
 };
 
+const mxlFusionDemo = {
+  ...api.DEFAULTS,
+  belt_pitch_mm: 2.032,
+  belt_length_mm: 237.744,
+  pulleyI_teeth: 20,
+  pulleyO_teeth: 75,
+  idler_OD_mm: 15.0,
+  belt_back_to_pitch_mm: 0.0,
+  center_IO_mm: 67.5,
+  idler_x_offset_mm: 15.0,
+  tension_slot_travel_mm: 6.0,
+  tension_offset_mm: 0.0,
+  belt_visual_thickness_mm: 1.5,
+  minimum_clearance_mm: 1.5
+};
+
 const straySpanFixture = {
   beltPitch: 5.0,
   beltLength: 596.2772811633768,
@@ -124,20 +140,86 @@ test("Fusion CSV rows stay stable and escape CSV-sensitive values", () => {
   const csv = api.rowsToCsv([
     ["Name", "Unit", "Expression", "Value", "Comments", "Favorite"],
     ...rows,
-    ["needs_escape", "No Units", "1", "", "comma, quote \" and newline\nhere", "false"]
+    ["needs_escape", "", "1", "1", "comma, quote \" and newline\nhere", "false"]
   ]);
 
-  assert.equal(rows.length, 44);
+  assert.equal(rows.length, 45);
   assert.equal(rows.every((row) => row.length === 6), true);
   assert.equal(rows[0][0], "belt_profile_code");
+  assert.equal(rows[0][1], "");
   assert.equal(api.fusionRows(defaultParams, "MXL", result.y)[0][2], "5");
   assert.equal(rows[0][5], "false");
+  assert.equal(rows.every((row) => row[3] !== ""), true);
+  assert.ok(rows.some((row) => row[0] === "belt_teeth"));
+  assert.ok(rows.every((row) => row[0] !== "belt_teeth_exact"));
   assert.ok(rows.some((row) => row[0] === "belt_back_to_pitch_mm"));
-  assert.match(rows.find((row) => row[0] === "output_shaft_dia_mm")[4], /PLACEHOLDER - verify for your build/);
-  assert.match(rows.find((row) => row[0] === "motor_mount_hole_spacing_mm")[4], /PLACEHOLDER - verify for your build/);
+  assert.ok(rows.some((row) => row[0] === "idler_pitch_r_mm"));
+  assert.equal(rows.find((row) => row[0] === "belt_length_mm")[2], "belt_teeth*belt_pitch_mm");
+  assert.equal(rows.find((row) => row[0] === "center_I_idler_mm")[2], "sqrt(idler_x_offset_mm^2+(input_y_mm-idler_y_mm)^2)");
+  assert.match(rows.find((row) => row[0] === "output_shaft_dia_mm")[4], /placeholder/);
+  assert.match(rows.find((row) => row[0] === "motor_mount_hole_spacing_mm")[4], /placeholder/);
   assert.ok(csv.startsWith("Name,Unit,Expression,Value,Comments,Favorite\r\n"));
   assert.ok(csv.includes("belt_pitch_mm,mm"));
   assert.ok(csv.includes("\"comma, quote \"\" and newline\nhere\""));
+});
+
+test("Fusion CSV matches the known-good Parameter I/O demo format", () => {
+  const { result } = solveInputParams(mxlFusionDemo);
+  const csv = api.rowsToCsv([
+    ["Name", "Unit", "Expression", "Value", "Comments", "Favorite"],
+    ...api.fusionRows(mxlFusionDemo, "MXL", result.y)
+  ]);
+
+  const expected = [
+    "Name,Unit,Expression,Value,Comments,Favorite",
+    "belt_profile_code,,5,5,MXL profile code,false",
+    "belt_pitch_mm,mm,2.0320 mm,2.032,MXL belt pitch,false",
+    "belt_teeth,,117,117,Closed belt tooth count,true",
+    "belt_length_mm,mm,belt_teeth*belt_pitch_mm,237.744,Closed belt pitch length,true",
+    "pulleyI_teeth,,20,20,Input pulley teeth,true",
+    "pulleyO_teeth,,75,75,Output pulley teeth,true",
+    "ratio,,pulleyO_teeth/pulleyI_teeth,3.75,Reduction ratio,true",
+    "pulleyI_pitch_dia_mm,mm,pulleyI_teeth*belt_pitch_mm/PI,12.936,Input pulley pitch diameter,false",
+    "pulleyO_pitch_dia_mm,mm,pulleyO_teeth*belt_pitch_mm/PI,48.51,Output pulley pitch diameter,false",
+    "pulleyI_pitch_r_mm,mm,pulleyI_pitch_dia_mm/2,6.468,Input pulley pitch radius,false",
+    "pulleyO_pitch_r_mm,mm,pulleyO_pitch_dia_mm/2,24.255,Output pulley pitch radius,false",
+    "idler_OD_mm,mm,15.0000 mm,15.00,Smooth idler outside diameter,true",
+    "idler_r_mm,mm,idler_OD_mm/2,7.5,Smooth idler radius,false",
+    "belt_back_to_pitch_mm,mm,0.0000 mm,0.00,Backside idler pitch offset,false",
+    "idler_pitch_r_mm,mm,idler_r_mm+belt_back_to_pitch_mm,7.5,Effective idler pitch radius,false",
+    "center_IO_mm,mm,67.5000 mm,67.5,Input to output center distance,true",
+    "idler_x_offset_mm,mm,15.0000 mm,15.00,Horizontal idler half spacing,true",
+    "tension_slot_travel_mm,mm,6.0000 mm,6.00,Total tension slot travel,true",
+    "tension_offset_mm,mm,0.0000 mm,0.00,Current tension displacement,true",
+    "belt_visual_thickness_mm,mm,1.5000 mm,1.5,Visual belt thickness only,false",
+    "minimum_clearance_mm,mm,1.5000 mm,1.5,2D clearance warning limit,false",
+    "output_x_mm,mm,0 mm,0.00,Output center X,false",
+    "output_y_mm,mm,0 mm,0.00,Output center Y,false",
+    "input_x_mm,mm,0 mm,0.00,Input center X,false",
+    "input_y_mm,mm,center_IO_mm,67.5,Input center Y,false",
+    "idler_y_nominal_mm,mm,47.9152 mm,47.915,Solved idler Y neutral,true",
+    "idler_y_mm,mm,idler_y_nominal_mm+tension_offset_mm,47.915,Current idler Y,false",
+    "idler1_x_mm,mm,-idler_x_offset_mm,-15.00,Left idler X,false",
+    "idler1_y_mm,mm,idler_y_mm,47.915,Left idler Y,false",
+    "idler2_x_mm,mm,idler_x_offset_mm,15.00,Right idler X,false",
+    "idler2_y_mm,mm,idler_y_mm,47.915,Right idler Y,false",
+    "center_I_idler_mm,mm,sqrt(idler_x_offset_mm^2+(input_y_mm-idler_y_mm)^2),24.669,Input to idler distance,false",
+    "center_O_idler_mm,mm,sqrt(idler_x_offset_mm^2+(idler_y_mm-output_y_mm)^2),50.208,Output to idler distance,false",
+    "idler_span_mm,mm,2*idler_x_offset_mm,30.00,Distance between idler centers,false",
+    "motor_mount_hole_spacing_mm,mm,31 mm,31.00,NEMA17 hole spacing placeholder,true",
+    "motor_screw_clearance_dia_mm,mm,3.4 mm,3.4,M3 screw clearance placeholder,false",
+    "motor_pilot_clearance_dia_mm,mm,23 mm,23.00,NEMA17 pilot clearance placeholder,false",
+    "output_shaft_dia_mm,mm,8 mm,8.00,Output shaft diameter placeholder,true",
+    "output_bearing_OD_mm,mm,16 mm,16.00,Output bearing OD placeholder,true",
+    "output_bearing_width_mm,mm,5 mm,5.00,Output bearing width placeholder,false",
+    "idler_bolt_dia_mm,mm,5 mm,5.00,Idler bolt diameter placeholder,true",
+    "idler_bolt_clearance_dia_mm,mm,idler_bolt_dia_mm+0.4 mm,5.4,Idler bolt clearance hole,false",
+    "slot_length_mm,mm,tension_slot_travel_mm+idler_bolt_dia_mm,11.00,Idler tension slot length,false",
+    "slot_width_mm,mm,idler_bolt_clearance_dia_mm,5.4,Idler tension slot width,false",
+    "wall_thickness_mm,mm,3 mm,3.00,General wall thickness,true"
+  ].join("\r\n") + "\r\n";
+
+  assert.equal(csv, expected);
 });
 
 test("Fusion CSV export rejects an unsolved nominal idler Y", () => {
