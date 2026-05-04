@@ -11,6 +11,7 @@ const mimeTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
   ".png": "image/png"
 };
 
@@ -110,11 +111,31 @@ after(async () => {
   }
 });
 
-test("root page redirects into the web app and renders the solved default layout", { timeout: 30000 }, async () => {
+test("root page redirects into the dashboard", { timeout: 30000 }, async () => {
   const { context, page, diagnostics } = await newPage({ width: 1440, height: 900 });
   try {
     await page.goto(`${baseUrl}/`, { waitUntil: "load" });
     await page.waitForURL(/\/web\//, { timeout: 10000 });
+    await page.waitForFunction(() => window.location.hash === "#/dashboard");
+
+    const title = await page.title();
+    const heading = (await page.locator("h1").textContent()).trim();
+    const projectText = (await page.locator("#beltActuatorProject").textContent()).trim();
+
+    assert.equal(title, "Belt Actuator");
+    assert.equal(heading, "Dashboard");
+    assert.match(projectText, /Belt Actuator/);
+    assert.deepEqual(diagnostics, []);
+  } finally {
+    await context.close();
+  }
+});
+
+test("dashboard opens the belt actuator solver", { timeout: 30000 }, async () => {
+  const { context, page, diagnostics } = await newPage({ width: 1440, height: 900 });
+  try {
+    await page.goto(`${baseUrl}/web/#/dashboard`, { waitUntil: "load" });
+    await page.click("#beltActuatorProject");
     await page.waitForSelector("#layoutSvg .belt-line", { timeout: 10000 });
 
     const title = await page.title();
@@ -125,8 +146,8 @@ test("root page redirects into the web app and renders the solved default layout
     const viewBox = await page.locator("#layoutSvg").getAttribute("viewBox");
     const svgHtml = await page.locator("#layoutSvg").evaluate((element) => element.outerHTML);
 
-    assert.equal(title, "Belt Actuator Solver");
-    assert.match(page.url(), /\/web\//);
+    assert.equal(title, "Belt Actuator");
+    assert.match(page.url(), /\/web\/#\/belt-actuator/);
     assert.match(status, /Solved neutral idler Y = 29\.263 mm/);
     assert.equal(metricsCount, 6);
     assert.equal(circleCount, 4);
@@ -142,7 +163,7 @@ test("root page redirects into the web app and renders the solved default layout
 test("controls handle custom profile, invalid geometry, reset, warning, and CSV export", { timeout: 30000 }, async () => {
   const { context, page, diagnostics } = await newPage({ width: 1440, height: 900 });
   try {
-    await page.goto(`${baseUrl}/web/`, { waitUntil: "load" });
+    await page.goto(`${baseUrl}/web/#/belt-actuator`, { waitUntil: "load" });
     await page.waitForSelector("#layoutSvg .belt-line", { timeout: 10000 });
 
     await page.selectOption("#beltType", "Custom");
@@ -187,7 +208,7 @@ test("controls handle custom profile, invalid geometry, reset, warning, and CSV 
 test("mobile layout renders without horizontal overflow", { timeout: 30000 }, async () => {
   const { context, page, diagnostics } = await newPage({ width: 390, height: 844 }, true);
   try {
-    await page.goto(`${baseUrl}/web/`, { waitUntil: "load" });
+    await page.goto(`${baseUrl}/web/#/belt-actuator`, { waitUntil: "load" });
     await page.waitForSelector("#layoutSvg .belt-line", { timeout: 10000 });
 
     const mobileState = await page.evaluate(() => {
@@ -210,6 +231,43 @@ test("mobile layout renders without horizontal overflow", { timeout: 30000 }, as
     assert.ok(mobileState.beltElements >= 8, JSON.stringify(mobileState));
     assert.ok(mobileState.maxScrollWidth <= mobileState.innerWidth + 1, JSON.stringify(mobileState));
     assert.deepEqual(diagnostics, []);
+  } finally {
+    await context.close();
+  }
+});
+
+test("Get 3D files opens the OpenSCAD customizer with solver values", { timeout: 30000 }, async () => {
+  const { context, page, diagnostics } = await newPage({ width: 1440, height: 900 });
+  try {
+    await page.goto(`${baseUrl}/web/#/belt-actuator`, { waitUntil: "load" });
+    await page.waitForSelector("#layoutSvg .belt-line", { timeout: 10000 });
+
+    const [popup] = await Promise.all([
+      page.waitForEvent("popup", { timeout: 10000 }),
+      page.click("#customizerButton")
+    ]);
+    await popup.waitForSelector("#pulleyModel", { timeout: 10000 });
+    await popup.waitForFunction(() => window.location.hash.startsWith("#/customizer/pulleys"));
+
+    const popupHash = await popup.evaluate(() => window.location.hash);
+    const model = await popup.locator("#pulleyModel").inputValue();
+    const type = await popup.locator("#customizer-Type").inputValue();
+    const teeth = await popup.locator("#customizer-Teeth").inputValue();
+    const pitch = await popup.locator("#customizer-Pitch").inputValue();
+
+    assert.match(popupHash, /beltType=GT2/);
+    assert.match(popupHash, /beltPitch=2/);
+    assert.match(popupHash, /inputTeeth=20/);
+    assert.match(popupHash, /outputTeeth=60/);
+    assert.equal(model, "input-pulley");
+    assert.equal(type, "GT2_2mm");
+    assert.equal(teeth, "20");
+    assert.equal(pitch, "2");
+    assert.equal(await popup.locator("#renderStlButton").isEnabled(), true);
+    assert.equal(await popup.locator("#downloadScadButton").isEnabled(), true);
+    assert.equal(await popup.locator("#downloadStlButton").isDisabled(), true);
+    assert.deepEqual(diagnostics, []);
+    await popup.close();
   } finally {
     await context.close();
   }

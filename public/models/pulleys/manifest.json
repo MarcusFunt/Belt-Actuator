@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "source": "pulley-generator.scad",
+  "models": [
+    {
+      "id": "input-pulley",
+      "name": "Input pulley",
+      "description": "Motor-side timing pulley seeded from the Belt Actuator input pulley.",
+      "filenamePrefix": "belt_actuator_input_pulley",
+      "queryTeethParam": "inputTeeth",
+      "defaults": {
+        "Teeth": 20,
+        "Color": "#d9ded8"
+      }
+    },
+    {
+      "id": "output-pulley",
+      "name": "Output pulley",
+      "description": "Output timing pulley seeded from the Belt Actuator output pulley.",
+      "filenamePrefix": "belt_actuator_output_pulley",
+      "queryTeethParam": "outputTeeth",
+      "defaults": {
+        "Teeth": 60,
+        "Color": "#d9ded8"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "name": "Type",
+      "label": "Belt profile type",
+      "section": "Pulley",
+      "type": "select",
+      "default": "GT2_2mm",
+      "options": [
+        { "value": "MXL", "label": "MXL" },
+        { "value": "XL", "label": "XL" },
+        { "value": "L", "label": "L" },
+        { "value": "40DP", "label": "40DP" },
+        { "value": "T2.5", "label": "T2.5" },
+        { "value": "T5", "label": "T5" },
+        { "value": "T10", "label": "T10" },
+        { "value": "GT2_2mm", "label": "GT2 2mm" },
+        { "value": "GT2_3mm", "label": "GT2 3mm" },
+        { "value": "GT2_5mm", "label": "GT2 5mm" },
+        { "value": "AT5", "label": "AT5" },
+        { "value": "HTD_3mm", "label": "HTD 3mm" },
+        { "value": "HTD_5mm", "label": "HTD 5mm" },
+        { "value": "HTD_8mm", "label": "HTD 8mm" }
+      ]
+    },
+    { "name": "Teeth", "label": "Teeth", "section": "Pulley", "type": "number", "unit": "teeth", "default": 20, "min": 6, "max": 240, "step": 1 },
+    { "name": "Width", "label": "Pulley width", "section": "Pulley", "type": "number", "unit": "mm", "default": 10, "min": 2, "max": 80, "step": 0.5 },
+    { "name": "Pitch", "label": "Tooth pitch", "section": "Pulley", "type": "number", "unit": "mm", "default": 2, "min": 0, "max": 10, "step": 0.1 },
+    {
+      "name": "Flange_Sides",
+      "label": "Flange placement",
+      "section": "Retainers",
+      "type": "select",
+      "default": "both",
+      "options": [
+        { "value": "top", "label": "Top" },
+        { "value": "both", "label": "Both" },
+        { "value": "bottom", "label": "Bottom" }
+      ]
+    },
+    { "name": "Flange_Height", "label": "Flange height", "section": "Retainers", "type": "number", "unit": "mm", "default": 2, "min": 0, "max": 8, "step": 0.1 },
+    { "name": "Flange_Thickness", "label": "Flange thickness", "section": "Retainers", "type": "number", "unit": "mm", "default": 1, "min": 0, "max": 8, "step": 0.1 },
+    { "name": "Flange_Taper", "label": "Flange taper", "section": "Retainers", "type": "number", "unit": "ratio", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    {
+      "name": "Bore_Type",
+      "label": "Bore type",
+      "section": "Bore",
+      "type": "select",
+      "default": "cylinder",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "cylinder", "label": "Cylinder" },
+        { "value": "keyway", "label": "Keyway" },
+        { "value": "hex", "label": "Hex" },
+        { "value": "D", "label": "D" }
+      ]
+    },
+    { "name": "Bore_Size", "label": "Bore size", "section": "Bore", "type": "number", "unit": "mm", "default": 8, "min": 0, "max": 40, "step": 0.1 },
+    { "name": "Bore_Chamfer", "label": "Bore chamfer", "section": "Bore", "type": "number", "unit": "mm", "default": 0.6, "min": 0, "max": 4, "step": 0.1 },
+    { "name": "Keyway_Size", "label": "Keyway size", "section": "Bore", "type": "vector", "unit": "[w, h]", "default": "[0, 0]" },
+    { "name": "Hub", "label": "Add hub", "section": "Hub", "type": "boolean", "default": false },
+    { "name": "Hub_Diameter", "label": "Hub diameter", "section": "Hub", "type": "number", "unit": "mm", "default": 20, "min": 0, "max": 100, "step": 0.5 },
+    { "name": "Hub_Height", "label": "Hub height", "section": "Hub", "type": "number", "unit": "mm", "default": 10, "min": 0, "max": 80, "step": 0.5 },
+    { "name": "Hub_Chamfer", "label": "Hub chamfer", "section": "Hub", "type": "number", "unit": "mm", "default": 0.6, "min": 0, "max": 4, "step": 0.1 },
+    { "name": "Screw_Count", "label": "Set screw count", "section": "Hub", "type": "number", "unit": "count", "default": 1, "min": 0, "max": 6, "step": 1 },
+    {
+      "name": "Screw_Angle",
+      "label": "Screw angle",
+      "section": "Hub",
+      "type": "select",
+      "default": 90,
+      "options": [
+        { "value": 60, "label": "60 deg" },
+        { "value": 90, "label": "90 deg" },
+        { "value": 180, "label": "180 deg" }
+      ]
+    },
+    {
+      "name": "Screw_Type",
+      "label": "Set screw type",
+      "section": "Hub",
+      "type": "select",
+      "default": "M4",
+      "options": [
+        { "value": "M2", "label": "M2" },
+        { "value": "M2.5", "label": "M2.5" },
+        { "value": "M3", "label": "M3" },
+        { "value": "M4", "label": "M4" },
+        { "value": "M5", "label": "M5" },
+        { "value": "M6", "label": "M6" },
+        { "value": "M8", "label": "M8" },
+        { "value": "M10", "label": "M10" },
+        { "value": "M12", "label": "M12" },
+        { "value": "#4", "label": "#4" },
+        { "value": "#6", "label": "#6" },
+        { "value": "#8", "label": "#8" },
+        { "value": "#10", "label": "#10" },
+        { "value": "#12", "label": "#12" },
+        { "value": "1/4", "label": "1/4" },
+        { "value": "5/16", "label": "5/16" },
+        { "value": "3/8", "label": "3/8" }
+      ]
+    },
+    { "name": "Screw_Offset", "label": "Screw vertical offset", "section": "Hub", "type": "number", "unit": "mm", "default": 0, "min": -20, "max": 20, "step": 0.1 },
+    { "name": "Screw_Thread", "label": "Add screw thread", "section": "Hub", "type": "boolean", "default": true },
+    { "name": "Debug", "label": "Debug", "section": "Render", "type": "boolean", "default": false },
+    { "name": "Color", "label": "Pulley color", "section": "Render", "type": "color", "default": "#e0e0e0" }
+  ]
+}
