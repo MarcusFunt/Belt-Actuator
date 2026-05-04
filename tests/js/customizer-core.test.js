@@ -36,6 +36,7 @@ test("customizer URL serialization preserves solver values", () => {
 });
 
 test("belt profiles map to OpenSCAD pulley generator types", () => {
+  assert.equal(customizer.beltProfileToScadType("MXL"), "MXL");
   assert.equal(customizer.beltProfileToScadType("GT2"), "GT2_2mm");
   assert.equal(customizer.beltProfileToScadType("GT3"), "GT2_3mm");
   assert.equal(customizer.beltProfileToScadType("HTD-3M"), "HTD_3mm");

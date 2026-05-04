@@ -8,6 +8,7 @@
   };
 
   const BELT_TYPE_TO_SCAD_TYPE = {
+    MXL: "MXL",
     GT2: "GT2_2mm",
     GT3: "GT2_3mm",
     "HTD-3M": "HTD_3mm",

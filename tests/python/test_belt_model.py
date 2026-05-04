@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from belted_actuator_model import BeltModel, segment_intersection, tangent_options
+from belted_actuator_model import BELT_PITCH_PRESETS, BeltModel, segment_intersection, tangent_options
 
 
 DEFAULT_MODEL = {
@@ -56,6 +56,9 @@ class GeometryHelperTests(unittest.TestCase):
 
 
 class BeltModelTests(unittest.TestCase):
+    def test_belt_pitch_presets_include_mxl(self):
+        self.assertAlmostEqual(BELT_PITCH_PRESETS["MXL"], 2.032, places=12)
+
     def test_circles_use_expected_symmetry_and_pitch_radii(self):
         circles = {circle.name: circle for circle in BeltModel.circles(DEFAULT_MODEL)}
 

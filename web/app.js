@@ -2,6 +2,7 @@
   "use strict";
 
   const BELT_PITCH_PRESETS = {
+    MXL: 2.032,
     GT2: 2.0,
     GT3: 3.0,
     "HTD-3M": 3.0,
@@ -686,9 +687,9 @@
       return `${value.toFixed(4)} mm`;
     }
 
-    const beltTypeCodes = { GT2: 1, GT3: 2, "HTD-3M": 3, "HTD-5M": 4 };
+    const beltTypeCodes = { GT2: 1, GT3: 2, "HTD-3M": 3, "HTD-5M": 4, MXL: 5 };
     const beltTypeCode = beltTypeCodes[beltType] || 0;
-    const beltTypeComment = `Belt profile: ${beltType}. 0=Custom, 1=GT2, 2=GT3, 3=HTD-3M, 4=HTD-5M.`;
+    const beltTypeComment = `Belt profile: ${beltType}. 0=Custom, 1=GT2, 2=GT3, 3=HTD-3M, 4=HTD-5M, 5=MXL.`;
 
     return [
       ["belt_profile_code", "No Units", String(beltTypeCode), beltTypeComment],

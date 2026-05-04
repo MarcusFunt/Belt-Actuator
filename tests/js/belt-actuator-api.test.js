@@ -52,6 +52,10 @@ test("default solver fixture matches the Python reference values", () => {
   assert.ok(Math.abs(derived.beltResidual) < 1e-6);
 });
 
+test("MXL belt preset uses the 0.080 inch metric pitch", () => {
+  assert.equal(api.BELT_PITCH_PRESETS.MXL, 2.032);
+});
+
 test("alternate GT3-style fixture solves and preserves belt length", () => {
   const { result, solution, derived } = solveInputParams(gt3Variant);
 
@@ -125,6 +129,7 @@ test("Fusion CSV rows stay stable and escape CSV-sensitive values", () => {
 
   assert.equal(rows.length, 44);
   assert.equal(rows[0][0], "belt_profile_code");
+  assert.equal(api.fusionRows(defaultParams, "MXL", result.y)[0][2], "5");
   assert.ok(rows.some((row) => row[0] === "belt_back_to_pitch_mm"));
   assert.match(rows.find((row) => row[0] === "output_shaft_dia_mm")[3], /PLACEHOLDER - verify for your build/);
   assert.match(rows.find((row) => row[0] === "motor_mount_hole_spacing_mm")[3], /PLACEHOLDER - verify for your build/);

@@ -76,7 +76,7 @@ The design goal is to generate a useful parametric actuator layout from a minima
 7. Solve the neutral idler height needed to make the selected belt fit.
 8. Export the resulting values to Fusion 360 as user parameters.
 
-This supports quick iteration across belt standards such as GT2, GT3, HTD-3M, HTD-5M, etc., without rewriting the CAD model each time.
+This supports quick iteration across belt standards such as MXL, GT2, GT3, HTD-3M, HTD-5M, etc., without rewriting the CAD model each time.
 
 ---
 
@@ -88,8 +88,8 @@ These are the actual inputs the layout is meant to use.
 
 | Input | Meaning |
 |---|---|
-| `belt_profile` | Optional belt-family label/preset, e.g. `GT2`, `HTD-3M`. |
-| `belt_pitch_mm` | Tooth pitch in mm. Example: GT2 = 2 mm, HTD-3M = 3 mm, HTD-5M = 5 mm. |
+| `belt_profile` | Optional belt-family label/preset, e.g. `MXL`, `GT2`, `HTD-3M`. |
+| `belt_pitch_mm` | Tooth pitch in mm. Example: MXL = 2.032 mm, GT2 = 2 mm, HTD-3M = 3 mm, HTD-5M = 5 mm. |
 | `belt_length_mm` | Closed-loop belt pitch length. |
 | `belt_visual_thickness_mm` | Visual belt thickness in the 2D drawing only. It is not used by the solver. |
 
