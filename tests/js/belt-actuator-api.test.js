@@ -122,18 +122,20 @@ test("Fusion CSV rows stay stable and escape CSV-sensitive values", () => {
   const { result } = solveInputParams(defaultParams);
   const rows = api.fusionRows(defaultParams, "GT2", result.y);
   const csv = api.rowsToCsv([
-    ["Name", "Unit", "Expression", "Comment"],
+    ["Name", "Unit", "Expression", "Value", "Comments", "Favorite"],
     ...rows,
-    ["needs_escape", "No Units", "1", "comma, quote \" and newline\nhere"]
+    ["needs_escape", "No Units", "1", "", "comma, quote \" and newline\nhere", "false"]
   ]);
 
   assert.equal(rows.length, 44);
+  assert.equal(rows.every((row) => row.length === 6), true);
   assert.equal(rows[0][0], "belt_profile_code");
   assert.equal(api.fusionRows(defaultParams, "MXL", result.y)[0][2], "5");
+  assert.equal(rows[0][5], "false");
   assert.ok(rows.some((row) => row[0] === "belt_back_to_pitch_mm"));
-  assert.match(rows.find((row) => row[0] === "output_shaft_dia_mm")[3], /PLACEHOLDER - verify for your build/);
-  assert.match(rows.find((row) => row[0] === "motor_mount_hole_spacing_mm")[3], /PLACEHOLDER - verify for your build/);
-  assert.ok(csv.startsWith("Name,Unit,Expression,Comment\r\n"));
+  assert.match(rows.find((row) => row[0] === "output_shaft_dia_mm")[4], /PLACEHOLDER - verify for your build/);
+  assert.match(rows.find((row) => row[0] === "motor_mount_hole_spacing_mm")[4], /PLACEHOLDER - verify for your build/);
+  assert.ok(csv.startsWith("Name,Unit,Expression,Value,Comments,Favorite\r\n"));
   assert.ok(csv.includes("belt_pitch_mm,mm"));
   assert.ok(csv.includes("\"comma, quote \"\" and newline\nhere\""));
 });

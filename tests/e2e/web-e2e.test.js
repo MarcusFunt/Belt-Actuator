@@ -194,7 +194,8 @@ test("controls handle custom profile, invalid geometry, reset, warning, and CSV 
     for await (const chunk of stream) {
       csv += chunk.toString("utf8");
     }
-    assert.ok(csv.startsWith("Name,Unit,Expression,Comment"));
+    assert.ok(csv.startsWith("Name,Unit,Expression,Value,Comments,Favorite"));
+    assert.match(csv, /^Name,Unit,Expression,Value,Comments,Favorite\r?\nbelt_profile_code,No Units,1,,/);
     assert.ok(csv.includes("belt_pitch_mm,mm"));
     assert.ok(csv.includes("belt_back_to_pitch_mm,mm"));
     assert.ok(csv.includes("PLACEHOLDER - verify for your build"));

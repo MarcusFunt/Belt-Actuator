@@ -691,7 +691,7 @@
     const beltTypeCode = beltTypeCodes[beltType] || 0;
     const beltTypeComment = `Belt profile: ${beltType}. 0=Custom, 1=GT2, 2=GT3, 3=HTD-3M, 4=HTD-5M, 5=MXL.`;
 
-    return [
+    const rows = [
       ["belt_profile_code", "No Units", String(beltTypeCode), beltTypeComment],
       ["belt_pitch_mm", "mm", mm(inputParams.belt_pitch_mm), "Timing belt tooth pitch."],
       ["belt_length_mm", "mm", mm(inputParams.belt_length_mm), "Closed-loop belt pitch length."],
@@ -737,6 +737,7 @@
       ["slot_width_mm", "mm", "idler_bolt_clearance_dia_mm", placeholderComment("Idler tension slot width.")],
       ["wall_thickness_mm", "mm", "3 mm", placeholderComment("General structural wall thickness.")]
     ];
+    return rows.map(([name, unit, expression, comment]) => [name, unit, expression, "", comment, "false"]);
   }
 
   function diagnosticsText(inputParams, beltType, state, modelP, sol, d) {
@@ -1437,7 +1438,7 @@
         return;
       }
       const p = inputParams();
-      const rows = [["Name", "Unit", "Expression", "Comment"]].concat(
+      const rows = [["Name", "Unit", "Expression", "Value", "Comments", "Favorite"]].concat(
         fusionRows(p, state.beltType, state.solvedIdlerYNominal)
       );
       const blob = new Blob([rowsToCsv(rows)], { type: "text/csv;charset=utf-8" });

@@ -218,11 +218,11 @@ The CSV is meant to be imported into Fusion 360 using a parameter import workflo
 
 CSV format used:
 
-`parameter name, unit, expression/value, comment`
+`Name, Unit, Expression, Value, Comments, Favorite`
 
 Example row:
 
-`pulleyI_pitch_dia_mm,mm,pulleyI_teeth*belt_pitch_mm/PI,Input pulley pitch diameter.`
+`pulleyI_pitch_dia_mm,mm,pulleyI_teeth*belt_pitch_mm/PI,,Input pulley pitch diameter.,false`
 
 The idea is that Fusion receives the key dimensions as named user parameters, so sketches and features can reference them directly. For example:
 

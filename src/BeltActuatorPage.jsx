@@ -238,7 +238,7 @@ export default function BeltActuatorPage() {
     if (!canExport) {
       return;
     }
-    const rows = [["Name", "Unit", "Expression", "Comment"]].concat(
+    const rows = [["Name", "Unit", "Expression", "Value", "Comments", "Favorite"]].concat(
       api.fusionRows(inputParams, beltType, solveState.solvedIdlerYNominal)
     );
     const blob = new Blob([api.rowsToCsv(rows)], { type: "text/csv;charset=utf-8" });
