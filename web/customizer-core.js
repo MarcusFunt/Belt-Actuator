@@ -4,6 +4,7 @@
   const ROUTES = {
     dashboard: "dashboard",
     beltActuator: "belt-actuator",
+    tractionWheel: "traction-wheel",
     pulleyCustomizer: "pulley-customizer"
   };
 
@@ -23,6 +24,10 @@
 
     if (path === "/belt-actuator") {
       return { name: ROUTES.beltActuator, path, query };
+    }
+
+    if (path === "/traction-wheel") {
+      return { name: ROUTES.tractionWheel, path, query };
     }
 
     if (path === "/customizer/pulleys") {

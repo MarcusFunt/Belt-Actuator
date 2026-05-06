@@ -14,6 +14,7 @@ test("hash routes parse to the expected pages", () => {
   assert.equal(customizer.parseRoute("").name, customizer.ROUTES.dashboard);
   assert.equal(customizer.parseRoute("#/dashboard").name, customizer.ROUTES.dashboard);
   assert.equal(customizer.parseRoute("#/belt-actuator").name, customizer.ROUTES.beltActuator);
+  assert.equal(customizer.parseRoute("#/traction-wheel").name, customizer.ROUTES.tractionWheel);
 
   const route = customizer.parseRoute("#/customizer/pulleys?model=output-pulley");
   assert.equal(route.name, customizer.ROUTES.pulleyCustomizer);

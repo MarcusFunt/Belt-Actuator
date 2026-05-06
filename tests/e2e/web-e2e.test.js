@@ -121,10 +121,12 @@ test("root page redirects into the dashboard", { timeout: 30000 }, async () => {
     const title = await page.title();
     const heading = (await page.locator("h1").textContent()).trim();
     const projectText = (await page.locator("#beltActuatorProject").textContent()).trim();
+    const tractionText = (await page.locator("#tractionWheelProject").textContent()).trim();
 
     assert.equal(title, "Belt Actuator");
     assert.equal(heading, "Dashboard");
     assert.match(projectText, /Belt Actuator/);
+    assert.match(tractionText, /High-Traction O-Ring Wheels/);
     assert.deepEqual(diagnostics, []);
   } finally {
     await context.close();
@@ -209,6 +211,34 @@ test("controls handle custom profile, invalid geometry, reset, warning, and CSV 
   }
 });
 
+test("dashboard opens the high-traction o-ring wheel calculator", { timeout: 30000 }, async () => {
+  const { context, page, diagnostics } = await newPage({ width: 1440, height: 900 });
+  try {
+    await page.goto(`${baseUrl}/web/#/dashboard`, { waitUntil: "load" });
+    await page.click("#tractionWheelProject");
+    await page.waitForSelector("#tractionWheelCalculator", { timeout: 10000 });
+
+    const status = (await page.locator("#tractionStatus").textContent()).trim();
+    const metricsCount = await page.locator(".metric").count();
+    const resultText = (await page.locator("#tractionResults").textContent()).trim();
+    const diagnosticsText = (await page.locator("#tractionDiagnostics").textContent()).trim();
+
+    assert.match(page.url(), /\/web\/#\/traction-wheel/);
+    assert.match(status, /Final wheel OD/);
+    assert.equal(metricsCount, 6);
+    assert.match(resultText, /Final wheel OD/);
+    assert.match(diagnosticsText, /Installed volume error: 0\.000000 mm\^3/);
+
+    await page.selectOption("#tractionMode", "target-stretch");
+    await page.fill("#target_stretch_percent-number", "5");
+    await page.waitForFunction(() => document.querySelector("#tractionDiagnostics")?.textContent.includes("Inside stretch: 5.00%"));
+
+    assert.deepEqual(diagnostics, []);
+  } finally {
+    await context.close();
+  }
+});
+
 test("mobile layout renders without horizontal overflow", { timeout: 30000 }, async () => {
   const { context, page, diagnostics } = await newPage({ width: 390, height: 844 }, true);
   try {
@@ -233,6 +263,37 @@ test("mobile layout renders without horizontal overflow", { timeout: 30000 }, as
     assert.ok(mobileState.svgHeight >= 512, JSON.stringify(mobileState));
     assert.equal(mobileState.toolbarPosition, "sticky");
     assert.ok(mobileState.beltElements >= 8, JSON.stringify(mobileState));
+    assert.ok(mobileState.maxScrollWidth <= mobileState.innerWidth + 1, JSON.stringify(mobileState));
+    assert.deepEqual(diagnostics, []);
+  } finally {
+    await context.close();
+  }
+});
+
+test("traction calculator mobile layout renders without horizontal overflow", { timeout: 30000 }, async () => {
+  const { context, page, diagnostics } = await newPage({ width: 390, height: 844 }, true);
+  try {
+    await page.goto(`${baseUrl}/web/#/traction-wheel`, { waitUntil: "load" });
+    await page.waitForSelector("#tractionResults", { timeout: 10000 });
+
+    const mobileState = await page.evaluate(() => {
+      const svg = document.querySelector("#tractionWheelSvg");
+      const toolbar = document.querySelector(".toolbar");
+      const maxScrollWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
+      return {
+        innerWidth: window.innerWidth,
+        maxScrollWidth,
+        svgHeight: svg.getBoundingClientRect().height,
+        toolbarPosition: getComputedStyle(toolbar).position,
+        metrics: document.querySelectorAll(".metric").length,
+        resultItems: document.querySelectorAll(".result-item").length
+      };
+    });
+
+    assert.equal(mobileState.metrics, 6);
+    assert.equal(mobileState.resultItems, 8);
+    assert.ok(mobileState.svgHeight >= 288, JSON.stringify(mobileState));
+    assert.equal(mobileState.toolbarPosition, "sticky");
     assert.ok(mobileState.maxScrollWidth <= mobileState.innerWidth + 1, JSON.stringify(mobileState));
     assert.deepEqual(diagnostics, []);
   } finally {

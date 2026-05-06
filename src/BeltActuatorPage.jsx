@@ -273,6 +273,7 @@ export default function BeltActuatorPage() {
         </div>
         <nav className="topbar-nav" aria-label="Page navigation">
           <a href="#/dashboard">Dashboard</a>
+          <a href="#/traction-wheel">O-ring Wheels</a>
         </nav>
         <output
           id="status"

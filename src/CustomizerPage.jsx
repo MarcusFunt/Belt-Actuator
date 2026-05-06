@@ -311,6 +311,7 @@ export default function CustomizerPage({ query }) {
         <nav className="topbar-nav" aria-label="Page navigation">
           <a href="#/dashboard">Dashboard</a>
           <a href="#/belt-actuator">Belt Actuator</a>
+          <a href="#/traction-wheel">O-ring Wheels</a>
         </nav>
       </header>
 

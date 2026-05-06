@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import BeltActuatorPage from "./BeltActuatorPage.jsx";
 import CustomizerPage from "./CustomizerPage.jsx";
 import DashboardPage from "./DashboardPage.jsx";
+import TractionWheelPage from "./TractionWheelPage.jsx";
 import "./styles.css";
 
 const customizer = window.BeltCustomizer;
@@ -27,6 +28,10 @@ function App() {
 
   if (route.name === customizer.ROUTES.beltActuator) {
     return <BeltActuatorPage />;
+  }
+
+  if (route.name === customizer.ROUTES.tractionWheel) {
+    return <TractionWheelPage />;
   }
 
   if (route.name === customizer.ROUTES.pulleyCustomizer) {

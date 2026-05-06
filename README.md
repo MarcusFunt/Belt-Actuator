@@ -14,6 +14,7 @@ static app. The app uses hash routes:
 
 - `#/dashboard` lists project tools.
 - `#/belt-actuator` opens the belt layout solver.
+- `#/traction-wheel` opens the high-traction o-ring wheel calculator.
 - `#/customizer/pulleys` opens the bundled OpenSCAD pulley customizer.
 
 ## Features
@@ -22,6 +23,7 @@ static app. The app uses hash routes:
 - Live 2D visualiser with belt path, pulley/idler circles, and dimension lines
 - Solves neutral idler Y (and idler X) from a fixed belt length
 - Belt profile presets: MXL, GT2, GT3, HTD-3M, HTD-5M, or custom pitch
+- High-traction o-ring wheel calculator with stretch and conserved-volume tire sizing
 - Clearance warnings between components
 - Exports a Fusion 360 Parameter I/O compatible CSV with formula expressions
 - Bundled OpenSCAD pulley customizer with STL preview and SCAD/STL downloads
